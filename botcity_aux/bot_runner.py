@@ -1,3 +1,5 @@
+import time
+from datetime import timedelta
 from typing import Tuple
 
 from botcity.maestro import BotExecution, BotMaestroSDK, ServerMessage
@@ -45,6 +47,7 @@ class BotRunner:
         self.telegram_bot = (
             TelegramBot(token=self.telegram_token) if self.telegram_token else None
         )
+        self.start_time = None  # Initialize start time for execution tracking
 
     def _setup_maestro(self) -> Tuple[BotMaestroSDK, BotExecution]:
         """
@@ -100,7 +103,7 @@ class BotRunner:
             logger.error(f"Failed to retrieve telegram token: {e}")
             raise e
 
-    def add_log_file_into_maestro(self) -> ServerMessage:
+    def _add_log_file_into_maestro(self) -> ServerMessage:
         """
         Uploads the log file to the BotMaestro server as an artifact.
 
@@ -132,6 +135,24 @@ class BotRunner:
             )
             raise e
 
+    def _get_execution_time(self) -> str:
+        """
+        Calculates the duration of the bot execution in DD:HH:MM:SS format.
+
+        Returns:
+            str: A string representing the execution time in the format 'DD:HH:MM:SS'.
+        """
+        if self.start_time is None:
+            return "Execution time not available"
+
+        end_time = time.time()
+        elapsed_seconds = int(end_time - self.start_time)
+        elapsed_time = str(timedelta(seconds=elapsed_seconds))
+
+        days, _ = divmod(elapsed_seconds, 86400)
+        execution_time = f"{int(days):02}:{elapsed_time}"
+        return execution_time
+
     def run(self) -> None:
         """
         Starts the bot execution process, including handling the logic for the bot's actions.
@@ -140,17 +161,20 @@ class BotRunner:
             Information about the start and completion of the bot execution.
         """
         try:
+            self.start_time = time.time()
             logger.info("Bot execution started.")
 
             # Add bot execution logic here (e.g., interacting with Telegram or other services).
             # Example: self.telegram_bot.send_message("Hello", "Group")
+
             logger.info("Bot execution completed.")
+            logger.info(f"Execution time: {self._get_execution_time()}")
         except Exception as e:
-            logger.error(f"An error occurred during bot execution: {e}")
             self.telegram_bot.send_message(
-                f"An error occurred during bot execution: {e}", "Your Group"
+                f"An error occurred during bot '{self.bot_name}' execution: {e}",
+                "Your Group",
             )
             self.telegram_bot.upload_document(
-                document=self.logger.log_path, group="Your Group", caption="Caption"
+                document=self.logger.log_path, group="Your Group", caption=self.bot_name
             )
             raise e
