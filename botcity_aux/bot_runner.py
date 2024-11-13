@@ -2,6 +2,8 @@ import time
 from datetime import timedelta
 from typing import Tuple
 
+import GPUtil
+import psutil
 from botcity.maestro import BotExecution, BotMaestroSDK, ServerMessage
 from loguru import logger
 
@@ -155,6 +157,36 @@ class BotRunner:
         execution_time = f"{days:02}:{hours:02}:{minutes:02}:{seconds:02}"
         return execution_time
 
+    def _get_resource_usage(self) -> str:
+        """
+        Retrieves current resource usage statistics (CPU, RAM, and GPU).
+
+        Returns:
+            str: A formatted string with CPU, RAM, and GPU usage details.
+        """
+        # CPU and RAM usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        ram_usage = psutil.virtual_memory()
+        ram_percent = ram_usage.percent
+        ram_used_mb = ram_usage.used / (1024 * 1024)
+
+        # GPU usage (if GPU is available)
+        gpu_stats = []
+        gpus = GPUtil.getGPUs()
+        if gpus:
+            for gpu in gpus:
+                gpu_stats.append(
+                    f"GPU {gpu.id}: {gpu.name}, Load: {gpu.load * 100:.1f}%, "
+                    f"Memory: {gpu.memoryUsed}MB/{gpu.memoryTotal}MB"
+                )
+            gpu_usage_str = "; ".join(gpu_stats)
+        else:
+            gpu_usage_str = "No GPU found."
+
+        # Format the usage information
+        usage_info = f"CPU Usage: {cpu_percent}%, RAM Usage: {ram_percent}% ({ram_used_mb:.1f} MB), GPU Usage: {gpu_usage_str}"
+        return usage_info
+
     def run(self) -> None:
         """
         Starts the bot execution process, including handling the logic for the bot's actions.
@@ -171,6 +203,9 @@ class BotRunner:
 
             logger.info(f"{self.bot_name} Bot execution completed.")
             logger.info(f"Execution time: {self._get_execution_time()}")
+            logger.info(
+                f"Resource usage at end of execution: {self._get_resource_usage()}"
+            )
         except Exception as e:
             self.telegram_bot.send_message(
                 f"An error occurred during bot '{self.bot_name}' execution: {e}",
