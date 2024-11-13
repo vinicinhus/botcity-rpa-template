@@ -2,10 +2,15 @@
 $excludeVirtualEnvs = @(".env", "env", ".venv", "venv")
 $excludeFolders = @("logs") # Add more folders if needed
 
-$exclude = $excludeVirtualEnvs + $excludeFolders + "project_template.zip"
+# Get the current folder name and set zip file name
+$currentFolderName = Split-Path -Path (Get-Location) -Leaf
+$zipFileName = "$currentFolderName.zip"
 
-# Get the files excluding specified folders and virtual envs
-$files = Get-ChildItem -Path . -Exclude $exclude -Recurse
+# Add the zip file name to the exclusion list
+$exclude = $excludeVirtualEnvs + $excludeFolders + $zipFileName
+
+# Get the files excluding specified folders, virtual envs, and the zip file itself
+$files = Get-ChildItem -Path . -Exclude $exclude
 
 # Compress the files
-Compress-Archive -Path $files -DestinationPath "project.zip" -Force
+Compress-Archive -Path $files -DestinationPath $zipFileName -Force
