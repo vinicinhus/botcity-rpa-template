@@ -147,10 +147,12 @@ class BotRunner:
 
         end_time = time.time()
         elapsed_seconds = int(end_time - self.start_time)
-        elapsed_time = str(timedelta(seconds=elapsed_seconds))
 
-        days, _ = divmod(elapsed_seconds, 86400)
-        execution_time = f"{int(days):02}:{elapsed_time}"
+        days, remainder = divmod(elapsed_seconds, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        execution_time = f"{days:02}:{hours:02}:{minutes:02}:{seconds:02}"
         return execution_time
 
     def run(self) -> None:
