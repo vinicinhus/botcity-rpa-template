@@ -167,7 +167,7 @@ class BotRunner:
             # Add bot execution logic here (e.g., interacting with Telegram or other services).
             # Example: self.telegram_bot.send_message("Hello", "Group")
 
-            logger.info("Bot execution completed.")
+            logger.info(f"{self.bot_name} Bot execution completed.")
             logger.info(f"Execution time: {self._get_execution_time()}")
         except Exception as e:
             self.telegram_bot.send_message(
