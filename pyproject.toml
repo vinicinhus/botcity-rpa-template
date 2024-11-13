@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "my-botcity-template"
+version = "0.1.0"
+description = ""
+authors = ["Vinicius <vinicius.arruda40@hotmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+botcity-framework-base = "^0.4.4"
+botcity-framework-core = "^1.2.1"
+botcity-maestro-sdk = "^0.5.1"
+botcity-telegram-plugin = "^0.1.4"
+loguru = "^0.7.2"
+psutil = "^6.1.0"
+gputil = "^1.4.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
