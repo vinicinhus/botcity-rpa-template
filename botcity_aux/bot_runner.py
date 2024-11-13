@@ -1,5 +1,4 @@
 import time
-from datetime import timedelta
 from typing import Tuple
 
 import GPUtil
