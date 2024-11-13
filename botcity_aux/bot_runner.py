@@ -205,7 +205,9 @@ class BotRunner:
             logger.info(
                 f"Resource usage at end of execution: {self._get_resource_usage()}"
             )
-            self.telegram_bot.send_message(f"{self.bot_name} Bot execution completed.")
+            self.telegram_bot.send_message(
+                f"{self.bot_name} Bot execution completed.", group="Your Group"
+            )
             self.telegram_bot.upload_document(
                 document=self.logger.log_path, group="Your Group", caption=self.bot_name
             )
