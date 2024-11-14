@@ -188,7 +188,7 @@ class BotRunner:
         usage_info = f"CPU Usage: {cpu_percent}%, RAM Usage: {ram_percent}% ({ram_used_mb:.1f} MB), GPU Usage: {gpu_usage_str}"
         return usage_info
 
-    def _execute_bot_task(self):
+    def _execute_bot_task(self) -> None:
         # Add bot execution logic here (e.g., interacting with Telegram or other services).
         # Example: self.telegram_bot.send_message("Hello", "Group")
         ...
