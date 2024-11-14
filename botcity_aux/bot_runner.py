@@ -21,6 +21,7 @@ class BotRunner:
         bot_maestro_sdk_raise (bool): Flag indicating whether to raise errors on BotMaestroSDK connection failures.
         maestro (BotMaestroSDK): Instance of the BotMaestroSDK for managing bot execution tasks.
         telegram_bot (TelegramBot): Telegram bot integration.
+        telegram_group (str): The Telegram group name or ID where bot notifications will be sent.
     """
 
     def __init__(
@@ -28,6 +29,7 @@ class BotRunner:
         bot_name: str,
         bot_maestro_sdk_raise: bool = False,
         log_dir: str = "logs",
+        telegram_group: str = None,
     ) -> None:
         """
         Initializes the BotRunner with the provided configuration.
@@ -36,8 +38,16 @@ class BotRunner:
             bot_name (str): The name of the bot, used for logging.
             bot_maestro_sdk_raise (bool): Flag for BotMaestroSDK to raise exceptions on connection errors (default is False).
             log_dir (str): Directory to store log files (default is 'logs').
+            telegram_group (str): The group to send messages to (this parameter is now required).
+
+        Raises:
+            ValueError: If the 'telegram_group' is not provided.
         """
+        if not telegram_group:
+            raise ValueError("Telegram group must be provided")
+
         self.bot_name: str = bot_name
+        self.telegram_group: str = telegram_group
 
         self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
 
@@ -196,7 +206,7 @@ class BotRunner:
             This method should be extended with the actual bot logic as per the application's needs.
         """
         # Add bot execution logic here (e.g., interacting with Telegram or other services).
-        # Example: self.telegram_bot.send_message("Hello", "Group")
+        # Example: self.telegram_bot.send_message("Hello", self.telegram_group)
         ...
 
     def run(self) -> None:
@@ -218,18 +228,22 @@ class BotRunner:
                 f"Resource usage at end of execution: {self._get_resource_usage()}"
             )
             self.telegram_bot.send_message(
-                f"{self.bot_name} Bot execution completed.", group="Your Group"
+                f"{self.bot_name} Bot execution completed.", group=self.telegram_group
             )
             self.telegram_bot.upload_document(
-                document=self.logger.log_path, group="Your Group", caption=self.bot_name
+                document=self.logger.log_path,
+                group=self.telegram_group,
+                caption=self.bot_name,
             )
         except Exception as e:
             self.telegram_bot.send_message(
                 f"An error occurred during bot '{self.bot_name}' execution: {e}",
-                "Your Group",
+                self.telegram_group,
             )
             self.telegram_bot.upload_document(
-                document=self.logger.log_path, group="Your Group", caption=self.bot_name
+                document=self.logger.log_path,
+                group=self.telegram_group,
+                caption=self.bot_name,
             )
             raise e
         finally:
