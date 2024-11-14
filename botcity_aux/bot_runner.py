@@ -189,6 +189,12 @@ class BotRunner:
         return usage_info
 
     def _execute_bot_task(self) -> None:
+        """
+        Executes the main task logic for the bot.
+
+        Note:
+            This method should be extended with the actual bot logic as per the application's needs.
+        """
         # Add bot execution logic here (e.g., interacting with Telegram or other services).
         # Example: self.telegram_bot.send_message("Hello", "Group")
         ...
