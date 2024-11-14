@@ -1,5 +1,5 @@
 import time
-from typing import Tuple
+from typing import Optional, Tuple
 
 import GPUtil
 import psutil
@@ -37,18 +37,20 @@ class BotRunner:
             bot_maestro_sdk_raise (bool): Flag for BotMaestroSDK to raise exceptions on connection errors (default is False).
             log_dir (str): Directory to store log files (default is 'logs').
         """
-        self.bot_name = bot_name
+        self.bot_name: str = bot_name
 
-        self.logger = LoggerConfig(bot_name, log_dir)
+        self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
 
-        self.bot_maestro_sdk_raise = bot_maestro_sdk_raise
+        self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
         self.maestro, self.execution = self._setup_maestro()
 
-        self.telegram_token = self._get_telegram_token()
-        self.telegram_bot = (
+        self.telegram_token: str = self._get_telegram_token()
+        self.telegram_bot: TelegramBot = (
             TelegramBot(token=self.telegram_token) if self.telegram_token else None
         )
-        self.start_time = None  # Initialize start time for execution tracking
+        self.start_time: Optional[float] = (
+            None  # Initialize start time for execution tracking
+        )
 
     def _setup_maestro(self) -> Tuple[BotMaestroSDK, BotExecution]:
         """
@@ -186,6 +188,11 @@ class BotRunner:
         usage_info = f"CPU Usage: {cpu_percent}%, RAM Usage: {ram_percent}% ({ram_used_mb:.1f} MB), GPU Usage: {gpu_usage_str}"
         return usage_info
 
+    def _execute_bot_task(self):
+        # Add bot execution logic here (e.g., interacting with Telegram or other services).
+        # Example: self.telegram_bot.send_message("Hello", "Group")
+        ...
+
     def run(self) -> None:
         """
         Starts the bot execution process, including handling the logic for the bot's actions.
@@ -197,8 +204,7 @@ class BotRunner:
             self.start_time = time.time()
             logger.info("Bot execution started.")
 
-            # Add bot execution logic here (e.g., interacting with Telegram or other services).
-            # Example: self.telegram_bot.send_message("Hello", "Group")
+            self._execute_bot_task()
 
             logger.info(f"{self.bot_name} Bot execution completed.")
             logger.info(f"Execution time: {self._get_execution_time()}")
@@ -220,3 +226,5 @@ class BotRunner:
                 document=self.logger.log_path, group="Your Group", caption=self.bot_name
             )
             raise e
+        finally:
+            self._add_log_file_into_maestro()
