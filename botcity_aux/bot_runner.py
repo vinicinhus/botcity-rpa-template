@@ -6,49 +6,43 @@ import psutil
 from botcity.maestro import BotExecution, BotMaestroSDK, ServerMessage
 from loguru import logger
 
+from src.main import main
+
 from .logger_config import LoggerConfig
 from .telegram_plugin import TelegramBot
 
 
 class BotRunner:
-    """
-    This class is responsible for initializing and running the bot execution flow,
-    including setting up logging, handling BotMaestroSDK, and interacting with the Telegram API.
-
-    Attributes:
-        bot_name (str): The name of the bot, used for logging purposes.
-        logger (LoggerConfig): Logger configuration instance to manage logging.
-        bot_maestro_sdk_raise (bool): Flag indicating whether to raise errors on BotMaestroSDK connection failures.
-        maestro (BotMaestroSDK): Instance of the BotMaestroSDK for managing bot execution tasks.
-        telegram_bot (TelegramBot): Telegram bot integration.
-        telegram_group (str): The Telegram group name or ID where bot notifications will be sent.
-    """
-
     def __init__(
         self,
         bot_name: str,
         bot_maestro_sdk_raise: bool = False,
         log_dir: str = "logs",
         telegram_group: str = None,
+        environment: str = "test",
+        timeout: int = 0,
     ) -> None:
         """
         Initializes the BotRunner with the provided configuration.
 
         Args:
-            bot_name (str): The name of the bot, used for logging.
-            bot_maestro_sdk_raise (bool): Flag for BotMaestroSDK to raise exceptions on connection errors (default is False).
-            log_dir (str): Directory to store log files (default is 'logs').
-            telegram_group (str): The group to send messages to (this parameter is now required).
+            bot_name (str): The bot's name, used for logging.
+            bot_maestro_sdk_raise (bool): Raise exceptions on BotMaestroSDK connection issues.
+            log_dir (str): Directory for log files (default: 'logs').
+            telegram_group (str): Telegram group name/ID for sending notifications.
+            environment (str): Execution environment ('production' or 'test').
+            timeout (int): Execution timeout in minutes (0 for no limit).
 
         Raises:
-            ValueError: If the 'telegram_group' is not provided.
+            ValueError: If 'telegram_group' is not provided.
         """
         if not telegram_group:
             raise ValueError("Telegram group must be provided")
 
         self.bot_name: str = bot_name
         self.telegram_group: str = telegram_group
-
+        self.environment: str = environment
+        self.timeout: int = timeout * 60  # Convert minutes to seconds
         self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
 
         self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
@@ -58,9 +52,7 @@ class BotRunner:
         self.telegram_bot: TelegramBot = (
             TelegramBot(token=self.telegram_token) if self.telegram_token else None
         )
-        self.start_time: Optional[float] = (
-            None  # Initialize start time for execution tracking
-        )
+        self.start_time: Optional[float] = None
 
     def _setup_maestro(self) -> Tuple[BotMaestroSDK, BotExecution]:
         """
@@ -168,6 +160,18 @@ class BotRunner:
         execution_time = f"{days:02}:{hours:02}:{minutes:02}:{seconds:02}"
         return execution_time
 
+    def _check_timeout(self) -> bool:
+        """
+        Checks if the execution time limit has been exceeded.
+
+        Returns:
+            bool: True if the time limit is exceeded, False otherwise.
+        """
+        if self.timeout <= 0 or self.start_time is None:
+            return False
+        elapsed_time = time.time() - self.start_time
+        return elapsed_time >= self.timeout
+
     def _get_resource_usage(self) -> str:
         """
         Retrieves current resource usage statistics (CPU, RAM, and GPU).
@@ -205,9 +209,11 @@ class BotRunner:
         Note:
             This method should be extended with the actual bot logic as per the application's needs.
         """
-        # Add bot execution logic here (e.g., interacting with Telegram or other services).
-        # Example: self.telegram_bot.send_message("Hello", self.telegram_group)
-        ...
+        while not self._check_timeout():
+            main()
+        else:
+            logger.warning("Execution time limit exceeded.")
+            raise TimeoutError("Bot execution time limit exceeded.")
 
     def run(self) -> None:
         """
