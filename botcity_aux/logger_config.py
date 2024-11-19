@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -83,5 +84,29 @@ class LoggerConfig:
         except Exception as e:
             logger.error(
                 f"Failed to set up logger with path {self.log_path}. Error: {str(e)}"
+            )
+            raise e
+
+    def copy_log_file(self, destination_dir: str) -> None:
+        """
+        Copies the log file to a specified destination directory.
+
+        Args:
+            destination_dir (str): The directory where the log file will be copied.
+
+        Raises:
+            Exception: If an error occurs while copying the log file.
+        """
+        try:
+            destination_path = Path(destination_dir) / self.log_filename
+
+            # Ensure the destination directory exists
+            Path(destination_dir).mkdir(parents=True, exist_ok=True)
+
+            shutil.copy(self.log_path, destination_path)
+            logger.info(f"Log file copied to: {destination_path}")
+        except Exception as e:
+            logger.error(
+                f"Failed to copy log file to {destination_dir}. Error: {str(e)}"
             )
             raise e

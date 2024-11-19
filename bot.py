@@ -2,7 +2,7 @@ import argparse
 
 from decouple import config
 
-from botcity_aux.bot_runner import BotRunnerMaestro, BotRunnerLocal
+from botcity_aux.bot_runner import BotRunnerLocal, BotRunnerMaestro
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,6 +29,7 @@ if __name__ == "__main__":
     if args.environment == "maestro":
         bot_runner = BotRunnerMaestro(
             bot_name="My Bot",
+            use_telegram=True,
             telegram_group="My Group",
         )
     else:
@@ -41,7 +42,8 @@ if __name__ == "__main__":
             server=server,
             login=login,
             key=key,
-            telegram_group="Testes",
+            use_telegram=True,
+            telegram_group="My Group",
         )
 
     bot_runner.run()

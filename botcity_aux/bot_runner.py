@@ -20,35 +20,45 @@ class BotRunnerMaestro:
         bot_name: str,
         bot_maestro_sdk_raise: bool = False,
         log_dir: str = "logs",
-        telegram_group: str = None,
+        use_telegram: bool = False,
+        telegram_group: Optional[str] = None,
     ) -> None:
         """
         Initializes the BotRunnerMaestro with the provided configuration.
 
         Args:
             bot_name (str): The name of the bot, used for logging and notifications.
-            bot_maestro_sdk_raise (bool, optional): Whether to raise exceptions when 
+            bot_maestro_sdk_raise (bool, optional): Whether to raise exceptions when
                 BotMaestroSDK encounters connection issues (default: False).
             log_dir (str, optional): Directory where log files will be stored (default: "logs").
+            use_telegram (bool, optional): Whether to enable Telegram integration (default: False).
             telegram_group (Optional[str]): The Telegram group name or ID for sending notifications.
 
         Raises:
             ValueError: If 'telegram_group' is not provided.
         """
-        if not telegram_group:
-            raise ValueError("Telegram group must be provided")
-
+        # initial config
         self.bot_name: str = bot_name
-        self.telegram_group: str = telegram_group
         self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
 
+        # maestro config
         self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
         self.maestro, self.execution = self._setup_maestro()
 
-        self.telegram_token: str = self._get_telegram_token()
-        self.telegram_bot: TelegramBot = (
-            TelegramBot(token=self.telegram_token) if self.telegram_token else None
-        )
+        # telegram config
+        self.use_telegram: bool = use_telegram
+        self.telegram_bot: Optional[TelegramBot] = None
+
+        if self.use_telegram:
+            if not telegram_group:
+                raise ValueError(
+                    "Telegram group must be provided when use_telegram is True."
+                )
+            self.telegram_group: str = telegram_group
+            self.telegram_token: str = self._get_telegram_token()
+            self.telegram_bot = TelegramBot(token=self.telegram_token)
+
+        # time config
         self.start_time: Optional[float] = None
 
     def _setup_maestro(self) -> Tuple[BotMaestroSDK, BotExecution]:
@@ -56,7 +66,7 @@ class BotRunnerMaestro:
         Sets up the BotMaestroSDK and retrieves the current task execution.
 
         Returns:
-            Tuple[BotMaestroSDK, BotExecution]: 
+            Tuple[BotMaestroSDK, BotExecution]:
                 - BotMaestroSDK: Instance configured with system arguments.
                 - BotExecution: Current task execution details.
 
@@ -88,6 +98,8 @@ class BotRunnerMaestro:
         Raises:
             Exception: If an error occurs during token retrieval.
         """
+        if not self.use_telegram:
+            return None
         try:
             token = self.maestro.get_credential(label="Telegram", key="token")
             logger.info("Telegram token retrieved successfully.")
@@ -202,24 +214,27 @@ class BotRunnerMaestro:
             logger.info(
                 f"Resource usage at end of execution: {self._get_resource_usage()}"
             )
-            self.telegram_bot.send_message(
-                f"{self.bot_name} Bot execution completed.", group=self.telegram_group
-            )
-            self.telegram_bot.upload_document(
-                document=self.logger.log_path,
-                group=self.telegram_group,
-                caption=self.bot_name,
-            )
+            if self.use_telegram:
+                self.telegram_bot.send_message(
+                    f"{self.bot_name} Bot execution completed.",
+                    group=self.telegram_group,
+                )
+                self.telegram_bot.upload_document(
+                    document=self.logger.log_path,
+                    group=self.telegram_group,
+                    caption=self.bot_name,
+                )
         except Exception as e:
-            self.telegram_bot.send_message(
-                f"An error occurred during bot '{self.bot_name}' execution: {e}",
-                self.telegram_group,
-            )
-            self.telegram_bot.upload_document(
-                document=self.logger.log_path,
-                group=self.telegram_group,
-                caption=self.bot_name,
-            )
+            if self.use_telegram:
+                self.telegram_bot.send_message(
+                    f"An error occurred during bot '{self.bot_name}' execution: {e}",
+                    self.telegram_group,
+                )
+                self.telegram_bot.upload_document(
+                    document=self.logger.log_path,
+                    group=self.telegram_group,
+                    caption=self.bot_name,
+                )
             raise e
         finally:
             self._add_log_file_into_maestro()
@@ -233,7 +248,8 @@ class BotRunnerLocal(BotMaestroSDK):
         login: str,
         key: str,
         log_dir: str = "logs",
-        telegram_group: str = None,
+        use_telegram: bool = False,
+        telegram_group: Optional[str] = None,
     ) -> None:
         """
         Initializes the BotRunnerLocal instance with the specified configuration.
@@ -244,29 +260,39 @@ class BotRunnerLocal(BotMaestroSDK):
             login (str): BotMaestro login credential.
             key (str): BotMaestro authentication key.
             log_dir (str, optional): Directory for log files (default: 'logs').
+            use_telegram (bool, optional): Whether to enable Telegram integration (default: False).
             telegram_group (Optional[str]): Telegram group name or ID for sending notifications.
 
         Raises:
             ValueError: If 'telegram_group' is not provided.
         """
+        # BotMaestroSDK config
         super().__init__(server, login, key)
         super().login()
         warnings.filterwarnings("ignore", category=InsecureRequestWarning)
 
-        if not telegram_group:
-            raise ValueError("Telegram group must be provided")
-
+        # initial config
         self.bot_name: str = bot_name
-        self.telegram_group: str = telegram_group
         self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
 
+        # maestro config
         self.RAISE_NOT_CONNECTED: bool = False
         self.VERIFY_SSL_CERT = False
 
-        self.telegram_token: str = self._get_telegram_token()
-        self.telegram_bot: TelegramBot = (
-            TelegramBot(token=self.telegram_token) if self.telegram_token else None
-        )
+        # telegram config
+        self.use_telegram: bool = use_telegram
+        self.telegram_bot: Optional[TelegramBot] = None
+
+        if self.use_telegram:
+            if not telegram_group:
+                raise ValueError(
+                    "Telegram group must be provided when use_telegram is True."
+                )
+            self.telegram_group: str = telegram_group
+            self.telegram_token: str = self._get_telegram_token()
+            self.telegram_bot = TelegramBot(token=self.telegram_token)
+
+        # time config
         self.start_time: Optional[float] = None
 
     def _get_telegram_token(self) -> str:
@@ -279,6 +305,8 @@ class BotRunnerLocal(BotMaestroSDK):
         Raises:
             Exception: If an error occurs during token retrieval.
         """
+        if not self.use_telegram:
+            return None
         try:
             token = super().get_credential(label="Telegram", key="token")
             logger.info("Telegram token retrieved successfully.")
@@ -367,22 +395,25 @@ class BotRunnerLocal(BotMaestroSDK):
             logger.info(
                 f"Resource usage at end of execution: {self._get_resource_usage()}"
             )
-            self.telegram_bot.send_message(
-                f"{self.bot_name} Bot execution completed.", group=self.telegram_group
-            )
-            self.telegram_bot.upload_document(
-                document=self.logger.log_path,
-                group=self.telegram_group,
-                caption=self.bot_name,
-            )
+            if self.use_telegram:
+                self.telegram_bot.send_message(
+                    f"{self.bot_name} Bot execution completed.",
+                    group=self.telegram_group,
+                )
+                self.telegram_bot.upload_document(
+                    document=self.logger.log_path,
+                    group=self.telegram_group,
+                    caption=self.bot_name,
+                )
         except Exception as e:
-            self.telegram_bot.send_message(
-                f"An error occurred during bot '{self.bot_name}' execution: {e}",
-                self.telegram_group,
-            )
-            self.telegram_bot.upload_document(
-                document=self.logger.log_path,
-                group=self.telegram_group,
-                caption=self.bot_name,
-            )
+            if self.use_telegram:
+                self.telegram_bot.send_message(
+                    f"An error occurred during bot '{self.bot_name}' execution: {e}",
+                    self.telegram_group,
+                )
+                self.telegram_bot.upload_document(
+                    document=self.logger.log_path,
+                    group=self.telegram_group,
+                    caption=self.bot_name,
+                )
             raise e
