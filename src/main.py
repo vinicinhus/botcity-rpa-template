@@ -1,5 +1,6 @@
 import time
 
+
 def main() -> None:
     """
     Main function to execute the simulated bot task.

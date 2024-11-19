@@ -1,9 +1,11 @@
 import argparse
 
-from botcity_aux.bot_runner import BotRunner
+from decouple import config
+
+from botcity_aux.bot_runner import BotRunnerMaestro, BotRunnerLocal
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """
     Configure command-line arguments.
 
@@ -14,25 +16,32 @@ def parse_args():
     parser.add_argument(
         "--environment",
         type=str,
-        choices=["production", "test"],
-        default="test",
-        help="Defines the execution environment: 'production' or 'test' (default: 'test')",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=0,
-        help="Sets the execution timeout in minutes (0 for no limit).",
+        choices=["maestro", "local"],
+        default="maestro",  # Set 'maestro' as the default
+        help="Defines the execution environment: 'maestro' or 'local' (default: 'maestro')",
     )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    bot_runner = BotRunner(
-        bot_name="My Bot",
-        telegram_group="My Group",
-        environment=args.environment,
-        timeout=args.timeout,
-    )
+
+    if args.environment == "maestro":
+        bot_runner = BotRunnerMaestro(
+            bot_name="My Bot",
+            telegram_group="My Group",
+        )
+    else:
+        server = config("SERVER_MAESTRO", cast=str)
+        login = config("LOGIN_MAESTRO", cast=str)
+        key = config("KEY_MAESTRO", cast=str)
+
+        bot_runner = BotRunnerLocal(
+            bot_name="My Bot",
+            server=server,
+            login=login,
+            key=key,
+            telegram_group="Testes",
+        )
+
     bot_runner.run()
