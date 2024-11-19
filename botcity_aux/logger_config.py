@@ -99,6 +99,10 @@ class LoggerConfig:
         """
         try:
             destination_path = Path(destination_dir) / self.log_filename
+
+            # Ensure the destination directory exists
+            Path(destination_dir).mkdir(parents=True, exist_ok=True)
+
             shutil.copy(self.log_path, destination_path)
             logger.info(f"Log file copied to: {destination_path}")
         except Exception as e:
