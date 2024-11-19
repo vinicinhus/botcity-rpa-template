@@ -752,6 +752,17 @@ uvicorn = ["uvicorn"]
 watchdog = ["watchdog"]
 
 [[package]]
+name = "python-decouple"
+version = "3.8"
+description = "Strict separation of settings from code."
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-decouple-3.8.tar.gz", hash = "sha256:ba6e2657d4f376ecc46f77a3a615e058d93ba5e465c01bbe57289bfb7cce680f"},
+    {file = "python_decouple-3.8-py3-none-any.whl", hash = "sha256:d0d45340815b25f4de59c974b855bb38d03151d81b037d9e3f463b0c9f8cbd66"},
+]
+
+[[package]]
 name = "python-xlib"
 version = "0.33"
 description = "Python X Library"
@@ -926,4 +937,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "72700f7a286839ee755974e237ef7fa05d256ee9a3128689d5ff2f9fc5633039"
+content-hash = "b56a694d9a114bb7d609dfe77522f03130b498ff6aaaf80b806e8491e9d4e12f"

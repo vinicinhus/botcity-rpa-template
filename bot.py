@@ -1,5 +1,47 @@
-from botcity_aux.bot_runner import BotRunner
+import argparse
+
+from decouple import config
+
+from botcity_aux.bot_runner import BotRunnerMaestro, BotRunnerLocal
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Configure command-line arguments.
+
+    Returns:
+        argparse.Namespace: Configured arguments.
+    """
+    parser = argparse.ArgumentParser(description="Bot Runner Configuration")
+    parser.add_argument(
+        "--environment",
+        type=str,
+        choices=["maestro", "local"],
+        default="maestro",  # Set 'maestro' as the default
+        help="Defines the execution environment: 'maestro' or 'local' (default: 'maestro')",
+    )
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    bot_runner = BotRunner(bot_name="My Bot", telegram_group="My Group")
+    args = parse_args()
+
+    if args.environment == "maestro":
+        bot_runner = BotRunnerMaestro(
+            bot_name="My Bot",
+            telegram_group="My Group",
+        )
+    else:
+        server = config("SERVER_MAESTRO", cast=str)
+        login = config("LOGIN_MAESTRO", cast=str)
+        key = config("KEY_MAESTRO", cast=str)
+
+        bot_runner = BotRunnerLocal(
+            bot_name="My Bot",
+            server=server,
+            login=login,
+            key=key,
+            telegram_group="Testes",
+        )
+
     bot_runner.run()

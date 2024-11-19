@@ -1,13 +1,18 @@
 # BotCity RPA Automation Template
 
-This repository provides a template for creating Robotic Process Automation (RPA) bots using the BotCity framework. It includes the necessary setup for integrating BotCity's BotMaestroSDK, Telegram, and logging, along with the foundational structure to quickly deploy RPA automation tasks.
+This repository provides a robust template for creating Robotic Process Automation (RPA) bots using the BotCity framework. The template includes integration with **BotMaestroSDK**, **Telegram Bot notifications**, detailed logging, and resource tracking for efficient and scalable automation tasks.
 
 ## Features
 
-- **BotMaestroSDK Integration:** Easily set up and run automation tasks with BotMaestroSDK.
-- **Telegram Bot Integration:** Communicate with Telegram for notifications or interactions during bot execution.
-- **Logging and Resource Tracking:** Full logging of bot execution with details on resource usage (CPU, RAM, GPU).
-- **Template for Custom Automation:** A starting point for your own RPA bots, with the flexibility to extend and modify for your specific use cases.
+- **Environment-Specific Execution:** Easily switch between Maestro (``--environment maestro``) and local (``--environment local``) execution modes.
+
+- **BotMaestroSDK Integration:** Leverage BotCity Maestro for task management and artifact handling.
+
+- **Telegram Notifications:** Send real-time execution updates and upload log files to Telegram groups.
+
+- **Detailed Resource Usage Logging:** Tracks CPU, RAM, and GPU usage during bot execution.
+
+- **Flexible Configuration:** Customize bot settings such as server credentials, log directories, and Telegram groups.
 
 ## Getting Started
 
@@ -26,7 +31,8 @@ Before running the bot, ensure you have the following installed:
 
     ```bash
     git clone https://github.com/vinicinhus/botcity-rpa-template.git
-    cd botcity-rpa-template
+
+    cd botcity-rpa-template 
     ```
 
 2. Install dependencies. You can choose one of the following methods:
@@ -47,57 +53,86 @@ Before running the bot, ensure you have the following installed:
         pip install -r requirements.txt
         ```
 
-3. Set up your **Telegram Bot** token:
+3. Set up your environment variables in a ``.env`` file:
+
+    ```plaintext
+    SERVER_MAESTRO="your_maestro_server_url"
+    LOGIN_MAESTRO="your_maestro_login"  
+    KEY_MAESTRO="your_maestro_key"  
+    ```
+
+4. Set up your **Telegram Bot** token:
 
     - Create a bot via **BotFather** on Telegram.
-    - Retrieve the token and ensure it’s available for the bot to use.
+    - Retrieve the token and store it securely in BotCity Maestro under a credential labeled Telegram.
 
-4. Update ``bot_runner.py`` with your desired bot configuration, such as bot name and any specific automation logic.
+5. Modify ``bot.py`` or ``src/main.py`` to include your automation logic.
 
 ### Usage
 
-To run the bot:
+To run the bot, specify the desired environment:
 
-```bash
-poetry run python bot.py
-```
+- **Maestro Execution (default):**
 
-This will initialize the bot and start the automation process defined in ``bot_runner.py``.
+    ```bash
+    poetry run python bot.py --environment maestro
+    # Or
+    python bot.py --environment maestro  
+    ```
+- **Local Execution:**
+
+    ```bash
+    poetry run python bot.py --environment local
+    # Or
+    python bot.py --environment local  
+    ```
 
 ### Configuration
 
-- **bot_name:** This is the name of your bot, used for logging.
-- **log_dir:** Directory where log files will be saved (default is ``logs``).
-- **bot_maestro_sdk_raise:** Flag to indicate whether errors should be raised during BotMaestroSDK connection failures.
+- **Environment Selection:** Use the ``--environment`` flag to specify the execution environment (``maestro`` or ``local``).
+- **Bot Details:** Set the bot name, server credentials, and Telegram group in ``bot.py`` or via environment variables.
+- **Logs Directory:** Logs are stored in the ``logs`` folder by default but can be customized.
 
 ### How It Works
 
-- The ``bot.py`` file initializes the ``BotRunner`` class from ``bot_runner.py`` and begins the bot execution process.
-- The ``BotRunner`` class:
+1. **Execution Modes:**
 
-    - Handles the bot execution flow, logging, and interaction with the Telegram bot.
-    - Initializes the **BotMaestroSDK** for running the automation task and retrieves the Telegram token.
-    - Logs the bot’s execution details, including resource usage (CPU, RAM, GPU).
-    - Allows for further customization to integrate other automation tools and processes.
+    - **Maestro Mode**: Uses the BotMaestroSDK to execute tasks and interact with the BotCity platform.
+    - **Local Mode:** Runs tasks locally while still providing logs and notifications via Telegram.
 
-### Logs
+2. **Resource Tracking:**
 
-Logs are automatically generated and stored in the specified log directory. The log file includes:
+    - Logs CPU, RAM, and GPU usage during execution for analysis and debugging.
 
-- Bot execution start and end time.
-- Detailed resource usage statistics.
-- Any errors or exceptions that occur during the bot execution.
+3. **Error Handling:**
 
-### Error Handling
+    - Sends error messages and uploads logs to Telegram and BotCity Maestro in case of failures.
 
-If an error occurs during the bot execution, the bot will:
+### Telegram Notifications
 
-- Send a message to the designated Telegram group with the error details.
-- Upload the log file to BotCity Maestro for further analysis.
+- Notifications are sent to the configured group about bot execution status (completion and error).
+- Log files are automatically uploaded to the Telegram group for analysis.
 
-## License
+### Logs and Artifacts
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/vinicinhus/botcity-rpa-template/blob/main/LICENSE) file for details.
+**Logs:**
+
+- Generated for each execution and saved in the ``logs`` directory.
+- Includes execution time, resource usage, and errors.
+
+**Artifacts:**
+
+- Automatically uploaded to BotCity Maestro under the associated task.
+
+### Extending the Template
+
+To extend or modify the bot’s functionality:
+
+1. Implement your custom automation logic in ``src/main.py``.
+
+2. Add or modify utility classes such as ``BotRunnerLocal`` or ``BotRunnerMaestro``.
+
+3. Use the ``_execute_bot_task`` method to define task-specific behavior.
 
 ## Contributing
 
@@ -106,6 +141,10 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 3. Make your changes.
 4. Commit and push your changes.
 5. Open a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/vinicinhus/botcity-rpa-template/blob/main/LICENSE) file for details.
 
 ## Acknowledgments
 
