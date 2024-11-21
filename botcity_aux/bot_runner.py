@@ -93,20 +93,23 @@ class BotRunnerMaestro:
             logger.error(f"Failed to initialize BotMaestroSDK: {e}")
             raise e
 
-    def _get_telegram_token(self) -> str:
+    def _get_telegram_token(self) -> Optional[str]:
         """
         Retrieves the Telegram bot token from the BotMaestro server.
 
         Returns:
-            str: The Telegram bot token, or None if retrieval fails.
+            Optional[str]: The Telegram bot token, or None if `use_telegram` is False.
 
         Raises:
+            ValueError: If the token is empty or not provided in the Maestro credentials.
             Exception: If an error occurs during token retrieval.
         """
         if not self.use_telegram:
             return None
         try:
             token = self.maestro.get_credential(label="Telegram", key="token")
+            if not token or token == "":
+                raise ValueError("Telegram Token must be provided in Maestro credentials")
             logger.info("Telegram token retrieved successfully.")
             return token
         except Exception as e:
@@ -321,20 +324,23 @@ class BotRunnerLocal(BotMaestroSDK):
         # time config
         self.start_time: Optional[float] = None
 
-    def _get_telegram_token(self) -> str:
+    def _get_telegram_token(self) -> Optional[str]:
         """
         Retrieves the Telegram bot token from the BotMaestro server.
 
         Returns:
-            str: The Telegram bot token, or None if retrieval fails.
+            Optional[str]: The Telegram bot token, or None if `use_telegram` is False.
 
         Raises:
+            ValueError: If the token is empty or not provided in the Maestro credentials.
             Exception: If an error occurs during token retrieval.
         """
         if not self.use_telegram:
             return None
         try:
             token = super().get_credential(label="Telegram", key="token")
+            if not token or token == "":
+                raise ValueError("Telegram Token must be provided in Maestro credentials")
             logger.info("Telegram token retrieved successfully.")
             return token
         except Exception as e:
