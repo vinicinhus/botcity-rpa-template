@@ -1,10 +1,15 @@
 import time
 import warnings
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import GPUtil
 import psutil
-from botcity.maestro import BotExecution, BotMaestroSDK, ServerMessage
+from botcity.maestro import (
+    AutomationTaskFinishStatus,
+    BotExecution,
+    BotMaestroSDK,
+    ServerMessage,
+)
 from loguru import logger
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -169,7 +174,7 @@ class BotRunnerMaestro:
 
         # GPU usage (if GPU is available)
         gpu_stats = []
-        gpus = GPUtil.getGPUs()
+        gpus: List = GPUtil.getGPUs()
         if gpus:
             for gpu in gpus:
                 gpu_stats.append(
@@ -209,10 +214,19 @@ class BotRunnerMaestro:
 
             self._execute_bot_task()
 
+            execution_time = self._get_execution_time()
+            resource_usage = self._get_resource_usage()
+
             logger.info(f"{self.bot_name} Bot execution completed.")
-            logger.info(f"Execution time: {self._get_execution_time()}")
-            logger.info(
-                f"Resource usage at end of execution: {self._get_resource_usage()}"
+            logger.info(f"Execution time: {execution_time}")
+            logger.info(f"Resource usage at end of execution: {resource_usage}")
+
+            success_message = f"""Execution time: {execution_time}\nResource usage at end of execution: {resource_usage}"""
+
+            self.maestro.finish_task(
+                self.execution.task_id,
+                AutomationTaskFinishStatus.SUCCESS,
+                success_message,
             )
             if self.use_telegram:
                 self.telegram_bot.send_message(
@@ -225,6 +239,18 @@ class BotRunnerMaestro:
                     caption=self.bot_name,
                 )
         except Exception as e:
+            logger.info(
+                f"An error occurred during bot '{self.bot_name}' execution: {e}"
+            )
+
+            self.maestro.error(self.execution.task_id, e)
+
+            self.maestro.finish_task(
+                self.execution.task_id,
+                AutomationTaskFinishStatus.FAILED,
+                f"An error occurred during bot execution: {e}",
+            )
+
             if self.use_telegram:
                 self.telegram_bot.send_message(
                     f"An error occurred during bot '{self.bot_name}' execution: {e}",
