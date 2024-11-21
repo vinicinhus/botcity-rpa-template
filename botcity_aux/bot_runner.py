@@ -109,7 +109,9 @@ class BotRunnerMaestro:
         try:
             token = self.maestro.get_credential(label="Telegram", key="token")
             if not token or token == "":
-                raise ValueError("Telegram Token must be provided in Maestro credentials")
+                raise ValueError(
+                    "Telegram Token must be provided in Maestro credentials"
+                )
             logger.info("Telegram token retrieved successfully.")
             return token
         except Exception as e:
@@ -340,7 +342,9 @@ class BotRunnerLocal(BotMaestroSDK):
         try:
             token = super().get_credential(label="Telegram", key="token")
             if not token or token == "":
-                raise ValueError("Telegram Token must be provided in Maestro credentials")
+                raise ValueError(
+                    "Telegram Token must be provided in Maestro credentials"
+                )
             logger.info("Telegram token retrieved successfully.")
             return token
         except Exception as e:
