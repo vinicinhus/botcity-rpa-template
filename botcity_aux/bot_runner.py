@@ -248,7 +248,9 @@ class BotRunnerMaestro:
                 f"An error occurred during bot '{self.bot_name}' execution: {e}"
             )
 
-            self.maestro.error(self.execution.task_id, e, attachments=[self.logger.log_path])
+            self.maestro.error(
+                self.execution.task_id, e, attachments=[self.logger.log_path]
+            )
 
             self.maestro.finish_task(
                 self.execution.task_id,

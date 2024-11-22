@@ -20,8 +20,8 @@ def parse_args() -> argparse.Namespace:
         default="maestro",  # Set 'maestro' as the default
         help="Defines the execution environment: 'maestro' or 'local' (default: 'maestro')",
     )
-    args, _ = parser.parse_known_args() # Get only required arguments
-    
+    args, _ = parser.parse_known_args()  # Get only required arguments
+
     return args
 
 
