@@ -48,7 +48,6 @@ class TelegramBot:
             return response
         except Exception as e:
             logger.error(f"Failed to send message to group '{group}': {e}")
-            raise e
 
     def edit_message(
         self, text: str, response: dict, username: Optional[List[str]] = None
@@ -69,7 +68,6 @@ class TelegramBot:
             logger.info(f"Edited message to: {text}")
         except Exception as e:
             logger.error(f"Failed to edit message: {e}")
-            raise e
 
     def upload_document(
         self, document: str, group: str, caption: str
@@ -97,7 +95,6 @@ class TelegramBot:
             logger.error(
                 f"Failed to upload document '{document}' to group '{group}': {e}"
             )
-            raise e
 
     def delete_message(self, response: Union[Response, Dict[str, Any]]) -> None:
         """
@@ -114,4 +111,3 @@ class TelegramBot:
             logger.info("Deleted message or document.")
         except Exception as e:
             logger.error(f"Failed to delete message or document: {e}")
-            raise e
