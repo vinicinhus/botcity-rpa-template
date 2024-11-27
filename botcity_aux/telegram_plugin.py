@@ -47,7 +47,7 @@ class TelegramBot:
             logger.info(f"Sent message to group '{group}': {text}")
             return response
         except Exception as e:
-            logger.error(f"Failed to send message to group '{group}': {e}")
+            logger.warning(f"Failed to send message to group '{group}': {e}")
 
     def edit_message(
         self, text: str, response: dict, username: Optional[List[str]] = None
@@ -67,7 +67,7 @@ class TelegramBot:
             self.telegram.edit_message(text=text, response=response, username=username)
             logger.info(f"Edited message to: {text}")
         except Exception as e:
-            logger.error(f"Failed to edit message: {e}")
+            logger.warning(f"Failed to edit message: {e}")
 
     def upload_document(
         self, document: str, group: str, caption: str
@@ -92,7 +92,7 @@ class TelegramBot:
             )
             return response
         except Exception as e:
-            logger.error(
+            logger.warning(
                 f"Failed to upload document '{document}' to group '{group}': {e}"
             )
 
@@ -110,4 +110,4 @@ class TelegramBot:
             self.telegram.delete_message(response=response)
             logger.info("Deleted message or document.")
         except Exception as e:
-            logger.error(f"Failed to delete message or document: {e}")
+            logger.warning(f"Failed to delete message or document: {e}")

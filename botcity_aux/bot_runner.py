@@ -244,7 +244,7 @@ class BotRunnerMaestro:
                     caption=self.bot_name,
                 )
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"An error occurred during bot '{self.bot_name}' execution: {e}"
             )
 
@@ -444,6 +444,10 @@ class BotRunnerLocal(BotMaestroSDK):
                     caption=self.bot_name,
                 )
         except Exception as e:
+            logger.error(
+                f"An error occurred during bot '{self.bot_name}' execution: {e}"
+            )
+            
             if self.use_telegram:
                 self.telegram_bot.send_message(
                     f"An error occurred during bot '{self.bot_name}' execution: {e}",
