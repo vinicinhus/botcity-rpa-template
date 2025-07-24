@@ -4,18 +4,16 @@ from typing import List, Optional, Tuple
 
 import GPUtil
 import psutil
-from botcity.maestro import (
-    AutomationTaskFinishStatus,
-    BotExecution,
-    BotMaestroSDK,
-    ServerMessage,
-)
+from botcity.maestro import (AutomationTaskFinishStatus, BotExecution,
+                             BotMaestroSDK, ServerMessage)
 from loguru import logger
 from urllib3.exceptions import InsecureRequestWarning
 
 from src.main import main
 
 from .logger_config import LoggerConfig
+from .sharepoint_config import SharePointApi
+from .sql.sql_database_connector import SQLDatabaseConnector
 from .telegram_plugin import TelegramBot
 
 
@@ -23,10 +21,16 @@ class BotRunnerMaestro:
     def __init__(
         self,
         bot_name: str,
+        dev: str,
+        sector: str,
+        stakeholder: str,
+        recurrence: str,
+        log_folder: str,
         bot_maestro_sdk_raise: bool = False,
         log_dir: str = "logs",
         use_telegram: bool = False,
         telegram_group: Optional[str] = None,
+        max_retries: int = 0,
     ) -> None:
         """
         Initializes the BotRunnerMaestro with the provided configuration.
@@ -49,6 +53,34 @@ class BotRunnerMaestro:
         # maestro config
         self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
         self.maestro, self.execution = self._setup_maestro()
+
+        # Save in prod database
+        self.dev: str = dev
+        self.sector: str = sector
+        self.stakeholder: str = stakeholder
+        self.recurrence: str = recurrence
+        self.max_retries = max_retries
+
+        # Sharepoint credentials
+        site_url_sharepoint = (
+            self.maestro.get_credential(
+                label="Your_Sharepoint_Credentials", key="site_url"
+            )
+            + "YourGroup"
+        )
+        username_sharepoint = self.maestro.get_credential(
+            label="Your_Sharepoint_Credentials", key="username"
+        )
+        password_sharepoint = self.maestro.get_credential(
+            label="Your_Sharepoint_Credentials", key="password"
+        )
+        self.sharepoint = SharePointApi(
+            site_url_sharepoint,
+            username_sharepoint,
+            password_sharepoint,
+            log_folder,
+            self.bot_name,
+        )
 
         # telegram config
         self.use_telegram: bool = use_telegram
@@ -194,6 +226,57 @@ class BotRunnerMaestro:
         usage_info = f"CPU Usage: {cpu_percent}%, RAM Usage: {ram_percent}% ({ram_used_mb:.1f} MB), GPU Usage: {gpu_usage_str}"
         return usage_info
 
+    def _insert_database_log_execution(self):
+        """
+        Inserts an execution log entry into the automation logs database.
+
+        This function retrieves the necessary SQL credentials from BotMaestro, establishes a
+        connection with the production SQL database, and inserts a log record with information
+        about the bot execution (such as bot name, developer, sector, stakeholder, recurrence, and execution time).
+
+        Raises:
+            Exception: If there is an error connecting to the database or executing the query.
+        """
+        time = self._get_execution_time()
+
+        sql_server = self.maestro.get_credential(
+            label="Your_SQL_Credentials", key="your_sql_server"
+        )
+        sql_database = self.maestro.get_credential(
+            label="Your_SQL_Credentials", key="your_sql_database"
+        )
+        sql_username = self.maestro.get_credential(
+            label="Your_SQL_Credentials", key="your_sql_username"
+        )
+        sql_password = self.maestro.get_credential(
+            label="Your_SQL_Credentials", key="your_sql_key"
+        )
+
+        sql_connector = SQLDatabaseConnector(
+            server=sql_server,
+            database=sql_database,
+            use_windows_auth=False,
+            username=sql_username,
+            password=sql_password,
+        )
+
+        sql_connector.connect()
+
+        params = (
+            self.bot_name,
+            self.dev,
+            self.sector,
+            self.stakeholder,
+            self.recurrence,
+            time,
+        )
+
+        query = r"botcity_aux\sql\query\insert_log.sql"
+
+        sql_connector.execute_query_from_file(query, params)
+
+        sql_connector.disconnect()
+
     def _execute_bot_task(self) -> None:
         """
         Executes the main bot task logic.
@@ -205,84 +288,120 @@ class BotRunnerMaestro:
 
     def run(self) -> None:
         """
-        Starts the bot execution process.
+        Starts the bot execution process with retry logic and logs the results.
+
+        This method attempts to execute the bot task up to the maximum number of retries
+        defined by `self.max_retries`. For each attempt, it logs the start time, execution time,
+        resource usage, and final status.
 
         Logs:
-            Information about the bot's execution start, completion, and errors.
+            - Execution start and completion per attempt.
+            - Execution time and system resource usage.
+            - Any errors encountered during execution.
 
         Raises:
-            Exception: If an error occurs during execution.
+            Exception: If the bot fails to execute successfully after all retry attempts.
         """
-        try:
-            self.start_time = time.time()
-            logger.info("Bot execution started.")
+        attempts = 0
+        while attempts <= self.max_retries:
+            try:
+                self.start_time = time.time()
+                logger.info(f"Bot execution started. Attempt {attempts}")
 
-            self._execute_bot_task()
+                self._execute_bot_task()
 
-            execution_time = self._get_execution_time()
-            resource_usage = self._get_resource_usage()
+                execution_time = self._get_execution_time()
+                resource_usage = self._get_resource_usage()
 
-            logger.info(f"{self.bot_name} Bot execution completed.")
-            logger.info(f"Execution time: {execution_time}")
-            logger.info(f"Resource usage at end of execution: {resource_usage}")
-
-            success_message = f"""Execution time: {execution_time}\nResource usage at end of execution: {resource_usage}"""
-
-            self.maestro.finish_task(
-                self.execution.task_id,
-                AutomationTaskFinishStatus.SUCCESS,
-                success_message,
-            )
-            if self.use_telegram:
-                self.telegram_bot.send_message(
-                    f"{self.bot_name} Bot execution completed.",
-                    group=self.telegram_group,
+                logger.info(
+                    f"{self.bot_name} Bot execution completed on attempt {attempts}."
                 )
-                self.telegram_bot.upload_document(
-                    document=self.logger.log_path,
-                    group=self.telegram_group,
-                    caption=self.bot_name,
-                )
-        except Exception as e:
-            logger.error(
-                f"An error occurred during bot '{self.bot_name}' execution: {e}"
-            )
+                logger.info(f"Execution time: {execution_time}")
+                logger.info(f"Resource usage at end of execution: {resource_usage}")
 
-            self.maestro.error(
-                self.execution.task_id, e, attachments=[self.logger.log_path]
-            )
+                self.sharepoint.list_folders_by_number()
+                self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                self._insert_database_log_execution()
 
-            self.maestro.finish_task(
-                self.execution.task_id,
-                AutomationTaskFinishStatus.FAILED,
-                f"An error occurred during bot execution: {e}",
-            )
+                success_message = f"""Execution time: {execution_time}\nResource usage at end of execution: {resource_usage}"""
 
-            if self.use_telegram:
-                self.telegram_bot.send_message(
-                    f"An error occurred during bot '{self.bot_name}' execution: {e}",
-                    self.telegram_group,
+                self.maestro.finish_task(
+                    self.execution.task_id,
+                    AutomationTaskFinishStatus.SUCCESS,
+                    success_message,
                 )
-                self.telegram_bot.upload_document(
-                    document=self.logger.log_path,
-                    group=self.telegram_group,
-                    caption=self.bot_name,
+
+                if self.use_telegram:
+                    self.telegram_bot.send_message(
+                        f"{self.bot_name} Bot execution completed.",
+                        group=self.telegram_group,
+                    )
+                    self.telegram_bot.upload_document(
+                        document=self.logger.log_path,
+                        group=self.telegram_group,
+                        caption=self.bot_name,
+                    )
+
+                break
+
+            except Exception as e:
+                attempts += 1
+                logger.error(
+                    f"An error occurred during bot '{self.bot_name}' execution: {e}"
                 )
-            raise e
-        finally:
-            self._add_log_file_into_maestro()
+
+                self.maestro.error(
+                    self.execution.task_id, e, attachments=[self.logger.log_path]
+                )
+
+                self.maestro.finish_task(
+                    self.execution.task_id,
+                    AutomationTaskFinishStatus.FAILED,
+                    f"An error occurred during bot execution: {e}",
+                )
+
+                if self.use_telegram:
+                    self.telegram_bot.send_message(
+                        f"An error occurred during bot '{self.bot_name}' execution: {e}",
+                        self.telegram_group,
+                    )
+                    self.telegram_bot.upload_document(
+                        document=self.logger.log_path,
+                        group=self.telegram_group,
+                        caption=self.bot_name,
+                    )
+
+                if attempts > self.max_retries:
+                    logger.error(
+                        f"Max retries reached ({self.max_retries}). Giving up."
+                    )
+                    self.sharepoint.list_folders_by_number()
+                    self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                    raise e
+
+                else:
+                    logger.info(f"Retrying bot execution (attempt {attempts})...")
+
+            finally:
+                self._add_log_file_into_maestro()
 
 
 class BotRunnerLocal(BotMaestroSDK):
     def __init__(
         self,
         bot_name: str,
+        dev: str,
+        sector: str,
+        stakeholder: str,
+        recurrence: str,
+        log_folder: str,
         server: str,
         login: str,
         key: str,
         log_dir: str = "logs",
         use_telegram: bool = False,
         telegram_group: Optional[str] = None,
+        max_retries: int = 0,
     ) -> None:
         """
         Initializes the BotRunnerLocal instance with the specified configuration.
@@ -307,6 +426,33 @@ class BotRunnerLocal(BotMaestroSDK):
         # initial config
         self.bot_name: str = bot_name
         self.logger: LoggerConfig = LoggerConfig(bot_name, log_dir)
+
+        # Save in homol database
+        self.dev: str = dev
+        self.sector: str = sector
+        self.stakeholder: str = stakeholder
+        self.recurrence: str = recurrence
+        self.max_retries = max_retries
+        self.log_folder: str = log_folder
+
+        # Sharepoint credentials
+        site_url_sharepoint = (
+            super().get_credential(label="Your_Sharepoint_Credentials", key="site_url")
+            + "YourGroup"
+        )
+        username_sharepoint = super().get_credential(
+            label="Your_Sharepoint_Credentials", key="username"
+        )
+        password_sharepoint = super().get_credential(
+            label="Your_Sharepoint_Credentials", key="password"
+        )
+        self.sharepoint = SharePointApi(
+            site_url_sharepoint,
+            username_sharepoint,
+            password_sharepoint,
+            log_folder,
+            self.bot_name,
+        )
 
         # maestro config
         self.RAISE_NOT_CONNECTED: bool = False
@@ -403,6 +549,42 @@ class BotRunnerLocal(BotMaestroSDK):
         usage_info = f"CPU Usage: {cpu_percent}%, RAM Usage: {ram_percent}% ({ram_used_mb:.1f} MB), GPU Usage: {gpu_usage_str}"
         return usage_info
 
+    def _insert_database_log_execution(self):
+        """
+        Inserts an execution log entry into the automation logs database.
+
+        This function retrieves the necessary SQL credentials from BotMaestro, establishes a
+        connection with the production SQL database, and inserts a log record with information
+        about the bot execution (such as bot name, developer, sector, stakeholder, recurrence, and execution time).
+
+        Raises:
+            Exception: If there is an error connecting to the database or executing the query.
+        """
+        time = self._get_execution_time()
+
+        sql_connector = SQLDatabaseConnector(
+            server="srv-homologation",
+            database="your_database",
+            use_windows_auth=True,
+        )
+
+        sql_connector.connect()
+
+        params = (
+            self.bot_name,
+            self.dev,
+            self.sector,
+            self.stakeholder,
+            self.recurrence,
+            time,
+        )
+
+        query = r"botcity_aux\sql\query\insert_log.sql"
+
+        sql_connector.execute_query_from_file(query, params)
+
+        sql_connector.disconnect()
+
     def _execute_bot_task(self) -> None:
         """
         Executes the main bot task logic.
@@ -414,48 +596,74 @@ class BotRunnerLocal(BotMaestroSDK):
 
     def run(self) -> None:
         """
-        Starts the bot execution process.
+        Starts the bot execution process with retry logic and logs the results.
+
+        This method attempts to execute the bot task up to the maximum number of retries
+        defined by `self.max_retries`. For each attempt, it logs the start time, execution time,
+        resource usage, and final status.
 
         Logs:
-            Information about the bot's execution start, completion, and errors.
+            - Execution start and completion per attempt.
+            - Execution time and system resource usage.
+            - Any errors encountered during execution.
 
         Raises:
-            Exception: If an error occurs during execution.
+            Exception: If the bot fails to execute successfully after all retry attempts.
         """
-        try:
-            self.start_time = time.time()
-            logger.info("Bot execution started.")
+        attempts = 0
+        while attempts <= self.max_retries:
+            try:
+                self.start_time = time.time()
+                logger.info(f"Bot execution started. Attempt {attempts}")
 
-            self._execute_bot_task()
+                self._execute_bot_task()
 
-            logger.info(f"{self.bot_name} Bot execution completed.")
-            logger.info(f"Execution time: {self._get_execution_time()}")
-            logger.info(
-                f"Resource usage at end of execution: {self._get_resource_usage()}"
-            )
-            if self.use_telegram:
-                self.telegram_bot.send_message(
-                    f"{self.bot_name} Bot execution completed.",
-                    group=self.telegram_group,
+                logger.info(
+                    f"{self.bot_name} Bot execution completed on attempt {attempts}."
                 )
-                self.telegram_bot.upload_document(
-                    document=self.logger.log_path,
-                    group=self.telegram_group,
-                    caption=self.bot_name,
+                logger.info(f"Execution time: {self._get_execution_time()}")
+                logger.info(
+                    f"Resource usage at end of execution: {self._get_resource_usage()}"
                 )
-        except Exception as e:
-            logger.error(
-                f"An error occurred during bot '{self.bot_name}' execution: {e}"
-            )
-            
-            if self.use_telegram:
-                self.telegram_bot.send_message(
-                    f"An error occurred during bot '{self.bot_name}' execution: {e}",
-                    self.telegram_group,
+                self.sharepoint.list_folders_by_number()
+                self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                self._insert_database_log_execution()
+
+                if self.use_telegram:
+                    self.telegram_bot.send_message(
+                        f"{self.bot_name} Bot execution completed.",
+                        group=self.telegram_group,
+                    )
+                    self.telegram_bot.upload_document(
+                        document=self.logger.log_path,
+                        group=self.telegram_group,
+                        caption=self.bot_name,
+                    )
+
+                break
+
+            except Exception as e:
+                attempts += 1
+                logger.error(
+                    f"An error occurred during bot '{self.bot_name}' attempt: {attempts}, execution: {e}"
                 )
-                self.telegram_bot.upload_document(
-                    document=self.logger.log_path,
-                    group=self.telegram_group,
-                    caption=self.bot_name,
-                )
-            raise e
+
+                if self.use_telegram:
+                    self.telegram_bot.send_message(
+                        f"An error occurred during bot '{self.bot_name}' execution: {e}",
+                        self.telegram_group,
+                    )
+                    self.telegram_bot.upload_document(
+                        document=self.logger.log_path,
+                        group=self.telegram_group,
+                        caption=self.bot_name,
+                    )
+
+                if attempts > self.max_retries:
+                    logger.error(
+                        f"Max retries reached ({self.max_retries}). Giving up."
+                    )
+                    raise e
+
+                else:
+                    logger.info(f"Retrying bot execution (attempt {attempts})...")
