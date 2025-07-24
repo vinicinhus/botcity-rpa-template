@@ -1,4 +1,19 @@
+import random
 import time
+
+from loguru import logger
+
+
+def simulated_task() -> bool:
+    """
+    Simulate a bot task.
+
+    Returns:
+        bool: True if task is successful, False otherwise.
+    """
+    logger.info("Starting simulated task...")
+    time.sleep(1)  # Simulated processing delay
+    return random.choice([True, False])  # Randomly simulate success or failure
 
 
 def main() -> None:
@@ -10,8 +25,13 @@ def main() -> None:
     bot logic as needed.
     """
     # Simulated bot task (for demonstration purposes)
-    print("Executing Script...")
-    time.sleep(1)  # Simulated workload
+    try:
+        if simulated_task():
+            logger.info("Task completed successfully.")
+        else:
+            raise RuntimeError("Simulated task failure.")
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
