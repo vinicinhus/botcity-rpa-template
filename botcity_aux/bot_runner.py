@@ -4,8 +4,12 @@ from typing import List, Optional, Tuple
 
 import GPUtil
 import psutil
-from botcity.maestro import (AutomationTaskFinishStatus, BotExecution,
-                             BotMaestroSDK, ServerMessage)
+from botcity.maestro import (
+    AutomationTaskFinishStatus,
+    BotExecution,
+    BotMaestroSDK,
+    ServerMessage,
+)
 from loguru import logger
 from urllib3.exceptions import InsecureRequestWarning
 
