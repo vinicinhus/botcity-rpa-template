@@ -19,6 +19,7 @@ gputil = "^1.4.0"
 black = "^24.10.0"
 isort = "^5.13.2"
 python-decouple = "^3.8"
+office365-rest-python-client = "^2.6.2"
 
 
 [build-system]
