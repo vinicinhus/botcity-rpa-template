@@ -20,6 +20,8 @@ black = "^24.10.0"
 isort = "^5.13.2"
 python-decouple = "^3.8"
 office365-rest-python-client = "^2.6.2"
+pandas = "^2.3.1"
+pyodbc = "^5.2.0"
 
 
 [build-system]
