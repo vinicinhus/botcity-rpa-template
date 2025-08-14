@@ -3,7 +3,7 @@ name = "rpa-template"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Vinicius",email = "vinicius.arruda40@hotmail.com"}
+    {name = "Vinicius",email = "vinicius.arruda40@hotmail.com"},
     {name = "Juan",email = "juan654.pablo@gmail.com"}
 ]
 readme = "README.md"
