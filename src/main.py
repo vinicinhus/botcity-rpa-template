@@ -28,11 +28,8 @@ def main() -> None:
     try:
         if simulated_task():
             logger.info("Task completed successfully.")
+            return 1
         else:
             raise RuntimeError("Simulated task failure.")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,8 +1,8 @@
 import argparse
 
-from decouple import config
-
-from botcity_aux.bot_runner import BotRunnerLocal, BotRunnerMaestro
+from botcity.botcity_local import BotRunnerLocal
+from botcity.botcity_maestro import BotRunnerMaestro
+from core.config import settings
 
 
 def parse_args() -> argparse.Namespace:
@@ -12,13 +12,13 @@ def parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace: Configured arguments.
     """
-    parser = argparse.ArgumentParser(description="Bot Runner Configuration")
+    parser = argparse.ArgumentParser(description=settings.DESCRIPTION)
     parser.add_argument(
         "--environment",
         type=str,
-        choices=["maestro", "local"],
-        default="maestro",  # Set 'maestro' as the default
-        help="Defines the execution environment: 'maestro' or 'local' (default: 'maestro')",
+        choices=[settings.CHOICE_MAESTRO, settings.CHOICE_LOCAL],
+        default=settings.CHOICE_MAESTRO,  # Set 'maestro' as the default
+        help=settings.HELP_MESSAGE,
     )
     args, _ = parser.parse_known_args()  # Get only required arguments
 
@@ -28,50 +28,22 @@ def parse_args() -> argparse.Namespace:
 if __name__ == "__main__":
     args = parse_args()
 
-    BOT_NAME = "My Bot"
-    TELEGRAM_GROUP = "My Group"
-    LOG_FOLDER = "00"  # Enter the department number, e.g., 01, 97, 15...
-    RECURRENCE = "daily"  # Options: 'weekly' or 'daily'
-    SECTOR = "Sector Dev"
-    DEVELOPER = "Your Name"
-    STAKEHOLDER = "StakeHolder Name"
-    MAX_RETRIES = 2  # 0 counts as 1, so always include it in the total retry count
-
-    if args.environment == "maestro":
-        bot_runner = BotRunnerMaestro(
-            bot_name=BOT_NAME,
-            use_telegram=True,
-            telegram_group=TELEGRAM_GROUP,
-            dev=DEVELOPER,
-            sector=SECTOR,
-            stakeholder=STAKEHOLDER,
-            recurrence=RECURRENCE,
-            max_retries=MAX_RETRIES,
-            log_folder=LOG_FOLDER,
-        )
+    if args.environment == settings.CHOICE_MAESTRO:
+        bot_runner = BotRunnerMaestro()
     else:
-        server = config("SERVER_MAESTRO", cast=str)
-        login = config("LOGIN_MAESTRO", cast=str)
-        key = config("KEY_MAESTRO", cast=str)
-
-        if not server or not login or not key:
+        if (
+            not settings.SERVER_MAESTRO
+            or not settings.LOGIN_MAESTRO
+            or not settings.KEY_MAESTRO
+        ):
             raise ValueError(
                 "SERVER_MAESTRO, LOGIN_MAESTRO, and KEY_MAESTRO must be provided in the .env file"
             )
 
         bot_runner = BotRunnerLocal(
-            bot_name=BOT_NAME,
-            server=server,
-            login=login,
-            key=key,
-            use_telegram=False,
-            telegram_group=TELEGRAM_GROUP,
-            dev=DEVELOPER,
-            sector=SECTOR,
-            stakeholder=STAKEHOLDER,
-            recurrence=RECURRENCE,
-            max_retries=MAX_RETRIES,
-            log_folder=LOG_FOLDER,
+            server=settings.SERVER_MAESTRO,
+            login=settings.LOGIN_MAESTRO,
+            key=settings.KEY_MAESTRO,
         )
 
     bot_runner.run()

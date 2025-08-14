@@ -4,6 +4,8 @@ from pathlib import Path
 
 from loguru import logger
 
+from core.config import settings
+
 
 class LoggerConfig:
     """
@@ -16,7 +18,7 @@ class LoggerConfig:
         log_path (str): The full path of the generated log file.
     """
 
-    def __init__(self, bot_name: str, log_dir: str = "logs") -> None:
+    def __init__(self, log_dir: str = "logs") -> None:
         """
         Initializes the LoggerConfig by creating the log directory, log file,
         and configuring the logger to save rotated logs.
@@ -25,7 +27,6 @@ class LoggerConfig:
             bot_name (str): The name of the bot to be used in the log file name.
             log_dir (str): The directory where logs will be saved (default: "logs").
         """
-        self.bot_name: str = bot_name
         self.log_filename: str = self._create_log_filename()
         self.log_dir: Path = Path(log_dir)
         self.log_path: str = self._create_log_path()
@@ -38,7 +39,9 @@ class LoggerConfig:
         Returns:
             str: The name of the log file in the format: '<bot_name>-<YYYY-MM-DD>.log'
         """
-        log_filename: str = f"{self.bot_name}-{datetime.now().strftime('%Y-%m-%d')}.log"
+        log_filename: str = (
+            f"{settings.BOT_NAME}-{datetime.now().strftime('%Y-%m-%d')}.log"
+        )
         return log_filename
 
     def _create_log_path(self) -> str:
