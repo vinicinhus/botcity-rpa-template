@@ -1,35 +1,90 @@
 import random
 import time
-
 from loguru import logger
+from bot import parse_args, get_bot_runner
+from core.config import settings
 
 
 def simulated_task() -> bool:
     """
-    Simulate a bot task.
+    Simulates a bot task execution with random success/failure outcome.
+
+    This function mimics a real bot task by:
+    - Logging the task start
+    - Introducing a processing delay
+    - Randomly determining success or failure
 
     Returns:
-        bool: True if task is successful, False otherwise.
+        bool: 
+            True if the simulated task succeeds (randomly chosen),
+            False if the simulated task fails.
+
+    Example:
+        >>> if simulated_task():
+        ...     print("Success!")
+        ... else:
+        ...     print("Failed!")
     """
     logger.info("Starting simulated task...")
     time.sleep(1)  # Simulated processing delay
     return random.choice([True, False])  # Randomly simulate success or failure
 
 
-def main() -> None:
+class Main:
     """
-    Main function to execute the simulated bot task.
+    Main bot execution handler that coordinates task execution and logging.
 
-    This function simulates a task performed by the bot by printing a message
-    and pausing for one second to emulate workload. Replace this with the actual
-    bot logic as needed.
+    This class serves as the primary interface for:
+    - Initializing bot runner based on environment (Maestro/Local)
+    - Executing the main bot workflow
+    - Handling success/failure scenarios
+    - Managing artifact uploads to Maestro when applicable
     """
-    # Simulated bot task (for demonstration purposes)
-    try:
-        if simulated_task():
-            logger.info("Task completed successfully.")
-            return 1
-        else:
-            raise RuntimeError("Simulated task failure.")
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
+
+    def __init__(self):
+        """
+        Initializes the Main bot instance.
+
+        Parses command line arguments and configures the appropriate
+        bot runner (Maestro or Local) based on the environment.
+        """
+        self.args = parse_args()
+        self.bot_runner = get_bot_runner(self.args)
+    
+    def script(self) -> int:
+        """
+        Executes the main bot workflow with comprehensive error handling.
+
+        The workflow consists of:
+        1. Running the simulated task
+        2. Handling successful execution:
+           - Uploading artifacts to Maestro (if in Maestro environment)
+           - Additional processing can be added as needed
+        3. Handling failures with appropriate error logging
+
+        Returns:
+            int: 
+                1 if task completes successfully,
+                0 if task fails (with error logged).
+
+        Raises:
+            RuntimeError: When the simulated task intentionally fails.
+
+        Note:
+            When running in Maestro environment, automatically uploads:
+            - Log files
+            - Can be extended to upload other artifacts (xlsx, csv, etc.)
+        """
+        try:
+            if simulated_task():
+                logger.info("Task completed successfully.")
+                if self.args.environment == settings.CHOICE_MAESTRO:
+                    self.bot_runner.post_artifact(self.bot_runner.execution.task_id, )
+                    # Additional artifact uploads can be added here
+                    # Example: self.bot_runner._add_artifact('report.xlsx')
+                return 1
+            else:
+                raise RuntimeError("Simulated task failure.")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+            return 0

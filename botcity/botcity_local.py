@@ -13,8 +13,6 @@ from core.config import settings
 from core.logging import LoggerConfig
 from core.sharepoint_wrapper import SharePointApi
 from core.sql_database_connector import SQLDatabaseConnectorDict
-from src.main import main
-
 
 class BotRunnerLocal(BotMaestroSDK):
     def __init__(
@@ -28,16 +26,11 @@ class BotRunnerLocal(BotMaestroSDK):
         Initializes the BotRunnerLocal instance with the specified configuration.
 
         Args:
-            bot_name (str): The bot's name, used for logging purposes.
             server (str): BotMaestro server URL.
             login (str): BotMaestro login credential.
             key (str): BotMaestro authentication key.
             log_dir (str, optional): Directory for log files (default: 'logs').
-            use_telegram (bool, optional): Whether to enable Telegram integration (default: False).
-            telegram_group (Optional[str]): Telegram group name or ID for sending notifications.
 
-        Raises:
-            ValueError: If 'telegram_group' is not provided.
         """
         # BotMaestroSDK config
         super().__init__(server, login, key)
@@ -47,10 +40,11 @@ class BotRunnerLocal(BotMaestroSDK):
         # initial config
         self.logger: LoggerConfig = LoggerConfig(log_dir)
 
+        # Sharepoint credentials
         self.sharepoint_credentials = self._get_credentials_sharepoint()
 
         self.sharepoint = SharePointApi(
-            self.sharepoint_credentials.get("site_url"),
+            self.sharepoint_credentials.get("site_url") + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
             self.sharepoint_credentials.get("username"),
             self.sharepoint_credentials.get("password"),
             settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
@@ -207,12 +201,29 @@ class BotRunnerLocal(BotMaestroSDK):
 
     def _execute_bot_task(self) -> Optional[int]:
         """
-        Executes the main bot task logic.
+        Executes the main bot task by running the Main class script.
 
-        Note:
-            This method should be extended with the actual task logic for your bot.
+        This method performs a lazy import of the Main class to avoid circular import dependencies.
+        It instantiates the Main class and executes its script() method, returning the count
+        of processed items.
+
+        Important:
+            - The lazy import (from src.main import Main) must not be moved to the module level
+            as it would cause circular import errors.
+            - This method serves as an adapter between the bot runner and the main task logic.
+
+        Returns:
+            Optional[int]: 
+                The number of items processed by the task, or None if the task failed 
+                or didn't process any items.
+
+        Example:
+            >>> runner = BotRunnerLocal(...)
+            >>> processed_items = runner._execute_bot_task()
+            >>> print(f"Processed {processed_items} items")
         """
-        total_items_processed = main()
+        from src.main import Main  # Lazy import to prevent circular imports
+        total_items_processed = Main().script()
         return total_items_processed
 
     def run(self) -> None:
