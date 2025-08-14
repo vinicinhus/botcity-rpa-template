@@ -29,6 +29,24 @@ def simulated_task() -> None:
 
 
 def main(credentials: Dict[str, str]):
+    """
+    Executes the main workflow using provided credentials.
+
+    Args:
+        credentials (Dict[str, str]):
+            A dictionary containing the credentials required
+            for the bot to perform its tasks.
+
+    Returns:
+        int:
+            The total number of items processed during execution.
+
+    Example:
+        >>> creds = {"username": "bot", "password": "secret"}
+        >>> processed_count = main(creds)
+        >>> print(processed_count)
+        1
+    """
     simulated_task()
 
     logger.info(credentials)

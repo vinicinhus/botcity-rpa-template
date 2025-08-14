@@ -267,6 +267,24 @@ class BotRunnerMaestro:
         sql_connector.disconnect()
 
     def _execute_bot_task(self) -> Optional[int]:
+        """
+        Executes the bot task and returns the number of processed items.
+
+        This method prepares the credentials, calls the `main` function to execute
+        the bot's main workflow, and returns the number of processed items. If the
+        task fails or produces no result, `None` can be returned.
+
+        Returns:
+            Optional[int]:
+                The number of items processed if successful, otherwise `None`.
+
+        Example:
+            >>> result = self._execute_bot_task()
+            >>> if result:
+            ...     print(f"Processed {result} items")
+            ... else:
+            ...     print("No items processed.")
+        """
         credentials = {"example1": "credential_1", "example2": "credential_2"}
 
         items_processed = main(credentials)
