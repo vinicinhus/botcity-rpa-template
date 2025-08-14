@@ -250,7 +250,7 @@ class BotRunnerMaestro:
 
         sql_connector.connect()
 
-        params = (
+        params = [
             settings.BOT_NAME,
             settings.DEVELOPER,
             settings.SECTOR,
@@ -258,7 +258,7 @@ class BotRunnerMaestro:
             settings.RECURRENCE,
             time,
             items_processed,
-        )
+        ]
 
         query = settings.SQL_QUERY_PATH
 
