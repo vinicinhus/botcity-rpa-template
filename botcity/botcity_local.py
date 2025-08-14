@@ -14,6 +14,7 @@ from core.logging import LoggerConfig
 from core.sharepoint_wrapper import SharePointApi
 from core.sql_database_connector import SQLDatabaseConnectorDict
 
+
 class BotRunnerLocal(BotMaestroSDK):
     def __init__(
         self,
@@ -44,9 +45,10 @@ class BotRunnerLocal(BotMaestroSDK):
         self.sharepoint_credentials = self._get_credentials_sharepoint()
 
         self.sharepoint = SharePointApi(
-            self.sharepoint_credentials.get("site_url") + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
-            self.sharepoint_credentials.get("username"),
-            self.sharepoint_credentials.get("password"),
+            self.sharepoint_credentials.get("site_url", "")
+            + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
+            self.sharepoint_credentials.get("username", ""),
+            self.sharepoint_credentials.get("password", ""),
             settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
         )
 
@@ -174,8 +176,8 @@ class BotRunnerLocal(BotMaestroSDK):
         credentials = self._get_database_credentials()
 
         sql_connector = SQLDatabaseConnectorDict(
-            server=credentials.get("server"),
-            database=credentials.get("database"),
+            server=credentials.get("server", ""),
+            database=credentials.get("database", ""),
             use_windows_auth=True,
             username=credentials.get("username"),
             password=credentials.get("password"),
@@ -183,7 +185,7 @@ class BotRunnerLocal(BotMaestroSDK):
 
         sql_connector.connect()
 
-        params = (
+        params = [
             settings.BOT_NAME,
             settings.DEVELOPER,
             settings.SECTOR,
@@ -191,7 +193,7 @@ class BotRunnerLocal(BotMaestroSDK):
             settings.RECURRENCE,
             time,
             items_processed,
-        )
+        ]
 
         query = settings.SQL_QUERY_PATH
 
@@ -213,8 +215,8 @@ class BotRunnerLocal(BotMaestroSDK):
             - This method serves as an adapter between the bot runner and the main task logic.
 
         Returns:
-            Optional[int]: 
-                The number of items processed by the task, or None if the task failed 
+            Optional[int]:
+                The number of items processed by the task, or None if the task failed
                 or didn't process any items.
 
         Example:
@@ -223,6 +225,7 @@ class BotRunnerLocal(BotMaestroSDK):
             >>> print(f"Processed {processed_items} items")
         """
         from src.main import Main  # Lazy import to prevent circular imports
+
         total_items_processed = Main().script()
         return total_items_processed
 

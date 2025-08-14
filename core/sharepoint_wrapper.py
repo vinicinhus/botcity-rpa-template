@@ -64,7 +64,7 @@ class SharePointApi:
             folder_names = [f.name for f in folders]
 
             regex = rf"^{self.folder_log}\s+-"
-            matching_folders = [name for name in folder_names if re.match(regex, name)]
+            matching_folders = [name for name in folder_names if name is not None and re.match(regex, name)]
 
             return matching_folders
 
@@ -91,7 +91,7 @@ class SharePointApi:
             self.ctx.load(files)
             self.ctx.execute_query()
 
-            return [f.name for f in files]
+            return [f.name for f in files if f.name is not None]
 
         except Exception as e:
             logger.error(f"Error while listing files in folder '{folder_name}': {e}")

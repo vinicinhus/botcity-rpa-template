@@ -1,11 +1,12 @@
-import random
 import time
+
 from loguru import logger
-from bot import parse_args, get_bot_runner
+
+from bot import get_bot_runner, parse_args
 from core.config import settings
 
 
-def simulated_task() -> bool:
+def simulated_task() -> None:
     """
     Simulates a bot task execution with random success/failure outcome.
 
@@ -15,7 +16,7 @@ def simulated_task() -> bool:
     - Randomly determining success or failure
 
     Returns:
-        bool: 
+        bool:
             True if the simulated task succeeds (randomly chosen),
             False if the simulated task fails.
 
@@ -27,7 +28,6 @@ def simulated_task() -> bool:
     """
     logger.info("Starting simulated task...")
     time.sleep(1)  # Simulated processing delay
-    return random.choice([True, False])  # Randomly simulate success or failure
 
 
 class Main:
@@ -50,7 +50,7 @@ class Main:
         """
         self.args = parse_args()
         self.bot_runner = get_bot_runner(self.args)
-    
+
     def script(self) -> int:
         """
         Executes the main bot workflow with comprehensive error handling.
@@ -63,7 +63,7 @@ class Main:
         3. Handling failures with appropriate error logging
 
         Returns:
-            int: 
+            int:
                 1 if task completes successfully,
                 0 if task fails (with error logged).
 
@@ -75,16 +75,16 @@ class Main:
             - Log files
             - Can be extended to upload other artifacts (xlsx, csv, etc.)
         """
-        try:
-            if simulated_task():
-                logger.info("Task completed successfully.")
-                if self.args.environment == settings.CHOICE_MAESTRO:
-                    self.bot_runner.post_artifact(self.bot_runner.execution.task_id, )
-                    # Additional artifact uploads can be added here
-                    # Example: self.bot_runner._add_artifact('report.xlsx')
-                return 1
-            else:
-                raise RuntimeError("Simulated task failure.")
-        except Exception as e:
-            logger.error(f"An error occurred: {e}")
-            return 0
+        simulated_task()
+
+        logger.info("Task completed successfully.")
+
+        if self.args.environment == settings.CHOICE_MAESTRO:
+            self.bot_runner.post_artifact( # type: ignore
+                self.bot_runner.execution.task_id, # type: ignore
+                artifact_name="archive.xlsx",
+                filepath="your_archive_path",
+            )
+        items_processed = 1
+
+        return items_processed

@@ -17,12 +17,13 @@ def parse_args() -> argparse.Namespace:
         "--environment",
         type=str,
         choices=[settings.CHOICE_MAESTRO, settings.CHOICE_LOCAL],
-        default=settings.CHOICE_MAESTRO, # Set 'maestro' as the default
+        default=settings.CHOICE_MAESTRO,  # Set 'maestro' as the default
         help=settings.HELP_MESSAGE,
     )
-    args, _ = parser.parse_known_args() # Get only required arguments
+    args, _ = parser.parse_known_args()  # Get only required arguments
 
     return args
+
 
 def get_bot_runner(args):
     """

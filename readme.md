@@ -1,6 +1,6 @@
 # BotCity RPA Automation Template
 
-This repository provides a robust template for creating Robotic Process Automation (RPA) bots using the BotCity framework. The template includes integration with **BotMaestroSDK**, **Telegram Bot notifications**, detailed logging, and resource tracking for efficient and scalable automation tasks.
+This repository provides a robust template for creating Robotic Process Automation (RPA) bots using the BotCity framework. The template includes integration with **BotMaestroSDK**, detailed logging, and resource tracking for efficient and scalable automation tasks.
 
 ## Features
 
@@ -8,11 +8,9 @@ This repository provides a robust template for creating Robotic Process Automati
 
 - **BotMaestroSDK Integration:** Leverage BotCity Maestro for task management and artifact handling.
 
-- **Telegram Notifications:** Send real-time execution updates and upload log files to Telegram groups.
-
 - **Detailed Resource Usage Logging:** Tracks CPU, RAM, and GPU usage during bot execution.
 
-- **Flexible Configuration:** Customize bot settings such as server credentials, log directories, and Telegram groups.
+- **Flexible Configuration:** Customize bot settings such as server credentials and log directories
 
 ## Getting Started
 
@@ -23,7 +21,6 @@ Before running the bot, ensure you have the following installed:
 - **Python 3.8**+
 - **Poetry** (for dependency management)
 - **BotCity SDK** (BotCity Maestro)
-- **Telegram Bot Token** (for bot interaction, if needed)
 
 ### Installation
 
@@ -61,12 +58,7 @@ Before running the bot, ensure you have the following installed:
     KEY_MAESTRO="your_maestro_key"  
     ```
 
-4. Set up your **Telegram Bot** token:
-
-    - Create a bot via **BotFather** on Telegram.
-    - Retrieve the token and store it securely in BotCity Maestro under a credential labeled Telegram.
-
-5. Modify ``bot.py`` or ``src/main.py`` to include your automation logic.
+4. Modify ``bot.py`` or ``src/main.py`` to include your automation logic.
 
 ### Usage
 
@@ -79,6 +71,7 @@ To run the bot, specify the desired environment:
     # Or
     python bot.py --environment maestro  
     ```
+
 - **Local Execution:**
 
     ```bash
@@ -90,7 +83,7 @@ To run the bot, specify the desired environment:
 ### Configuration
 
 - **Environment Selection:** Use the ``--environment`` flag to specify the execution environment (``maestro`` or ``local``).
-- **Bot Details:** Set the bot name, server credentials, and Telegram group in ``bot.py`` or via environment variables.
+- **Bot Details:** Set the bot name and server credentials in ``core/config.py`` or via environment variables.
 - **Logs Directory:** Logs are stored in the ``logs`` folder by default but can be customized.
 
 ### How It Works
@@ -98,7 +91,7 @@ To run the bot, specify the desired environment:
 1. **Execution Modes:**
 
     - **Maestro Mode**: Uses the BotMaestroSDK to execute tasks and interact with the BotCity platform.
-    - **Local Mode:** Runs tasks locally while still providing logs and notifications via Telegram.
+    - **Local Mode:** Runs tasks locally while still providing logs.
 
 2. **Resource Tracking:**
 
@@ -106,12 +99,7 @@ To run the bot, specify the desired environment:
 
 3. **Error Handling:**
 
-    - Sends error messages and uploads logs to Telegram and BotCity Maestro in case of failures.
-
-### Telegram Notifications
-
-- Notifications are sent to the configured group about bot execution status (completion and error).
-- Log files are automatically uploaded to the Telegram group for analysis.
+    - Sends error messages and uploads logs to BotCity Maestro in case of failures.
 
 ### Logs and Artifacts
 
@@ -149,5 +137,4 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 ## Acknowledgments
 
 - [BotCity](https://documentation.botcity.dev/) for providing the powerful framework for automation.
-- [Telegram Bot API](https://core.telegram.org/bots/api) for integrating with Telegram for bot interactions.
 - [Poetry](https://python-poetry.org/) for managing project dependencies.

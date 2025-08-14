@@ -16,6 +16,7 @@ from core.logging import LoggerConfig
 from core.sharepoint_wrapper import SharePointApi
 from core.sql_database_connector import SQLDatabaseConnectorDict
 
+
 class BotRunnerMaestro:
     """
     Class to handle execution of a BotCity bot with integration to BotMaestro,
@@ -32,14 +33,12 @@ class BotRunnerMaestro:
     def __init__(
         self,
         bot_maestro_sdk_raise: bool = False,
-        log_dir: str = "logs",
     ) -> None:
         """
         Initializes the BotRunnerMaestro with provided configuration.
 
         Args:
             bot_maestro_sdk_raise (bool, optional): Raise exceptions on BotMaestro connection issues (default False).
-            log_dir (str, optional): Directory to store bot logs (default 'logs').
 
         Attributes:
             logger (LoggerConfig): Logger instance for the bot.
@@ -49,7 +48,7 @@ class BotRunnerMaestro:
             start_time (Optional[float]): Time when execution starts.
         """
         # initial config
-        self.logger: LoggerConfig = LoggerConfig(settings.BOT_NAME, log_dir)
+        self.logger: LoggerConfig = LoggerConfig(settings.BOT_NAME)
 
         # maestro config
         self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
@@ -59,9 +58,10 @@ class BotRunnerMaestro:
         self.sharepoint_credentials = self._get_credentials_sharepoint()
 
         self.sharepoint = SharePointApi(
-            self.sharepoint_credentials.get("site_url") + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
-            self.sharepoint_credentials.get("username"),
-            self.sharepoint_credentials.get("password"),
+            self.sharepoint_credentials.get("site_url", "")
+            + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
+            self.sharepoint_credentials.get("username", ""),
+            self.sharepoint_credentials.get("password", ""),
             settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
         )
 
@@ -80,7 +80,8 @@ class BotRunnerMaestro:
         """
         try:
             # Set up the BotMaestroSDK with custom configuration
-            BotMaestroSDK.RAISE_NOT_CONNECTED = self.bot_maestro_sdk_raise
+            if self.bot_maestro_sdk_raise:
+                BotMaestroSDK.RAISE_NOT_CONNECTED = True
             maestro = BotMaestroSDK.from_sys_args()
             execution: BotExecution = maestro.get_execution()
 
@@ -132,7 +133,7 @@ class BotRunnerMaestro:
         """
         try:
             response: ServerMessage = self.maestro.post_artifact(
-                task_id=self.execution.task_id,
+                task_id=int(self.execution.task_id),
                 artifact_name=self.logger.log_filename,
                 filepath=self.logger.log_path,
             )
@@ -239,8 +240,8 @@ class BotRunnerMaestro:
         credentials = self._get_database_credentials()
 
         sql_connector = SQLDatabaseConnectorDict(
-            server=credentials.get("server"),
-            database=credentials.get("database"),
+            server=credentials.get("server", ""),
+            database=credentials.get("database", ""),
             use_windows_auth=False,
             username=credentials.get("username"),
             password=credentials.get("password"),
@@ -248,7 +249,7 @@ class BotRunnerMaestro:
 
         sql_connector.connect()
 
-        params = (
+        params = [
             settings.BOT_NAME,
             settings.DEVELOPER,
             settings.SECTOR,
@@ -256,7 +257,7 @@ class BotRunnerMaestro:
             settings.RECURRENCE,
             time,
             items_processed,
-        )
+        ]
 
         query = settings.SQL_QUERY_PATH
 
@@ -278,8 +279,8 @@ class BotRunnerMaestro:
             - This method serves as an adapter between the bot runner and the main task logic.
 
         Returns:
-            Optional[int]: 
-                The number of items processed by the task, or None if the task failed 
+            Optional[int]:
+                The number of items processed by the task, or None if the task failed
                 or didn't process any items.
 
         Example:
@@ -288,6 +289,7 @@ class BotRunnerMaestro:
             >>> print(f"Processed {processed_items} items")
         """
         from src.main import Main  # Lazy import to prevent circular imports
+
         total_items_processed = Main().script()
         return total_items_processed
 
@@ -348,7 +350,7 @@ class BotRunnerMaestro:
                 )
 
                 self.maestro.error(
-                    self.execution.task_id, e, attachments=[self.logger.log_path]
+                    int(self.execution.task_id), e, attachments=[self.logger.log_path]
                 )
 
                 self.maestro.finish_task(

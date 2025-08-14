@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Database settings
     # =============================
     USE_DATABASE: bool = True
-    SQL_QUERY_PATH: str = r'queries\Insert Data into Database LOG.sql'
+    SQL_QUERY_PATH: str = r"queries\Insert Data into Database LOG.sql"
     MAESTRO_SQL_LABEL: str = "Your Maestro SQL Label Credential"
     MAESTRO_SQL_SERVER: str = "Your Maestro SQL Server Credential"
     MAESTRO_SQL_DATABASE: str = "Your Maestro SQL Database Credential"
