@@ -156,10 +156,12 @@ class SQLDatabaseConnectorDict:
         """
         try:
             logger.debug(f"Executing query: {query} with parameters: {params}")
-            
+
             if self.connection is None:
-                raise RuntimeError("Database connection is not established. Call connect() first.")
-            
+                raise RuntimeError(
+                    "Database connection is not established. Call connect() first."
+                )
+
             with self.connection.cursor() as cursor:
                 cursor.execute(query, params or [])
 
@@ -210,7 +212,9 @@ class SQLDatabaseConnectorDict:
             )
 
             if self.connection is None:
-                raise RuntimeError("Database connection is not established. Call connect() first.")
+                raise RuntimeError(
+                    "Database connection is not established. Call connect() first."
+                )
 
             with self.connection.cursor() as cursor:
                 cursor.execute(query, params or [])

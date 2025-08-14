@@ -15,6 +15,7 @@ from core.config import settings
 from core.logging import LoggerConfig
 from core.sharepoint_wrapper import SharePointApi
 from core.sql_database_connector import SQLDatabaseConnectorDict
+from src.main import main
 
 
 class BotRunnerMaestro:
@@ -249,7 +250,7 @@ class BotRunnerMaestro:
 
         sql_connector.connect()
 
-        params = [
+        params = (
             settings.BOT_NAME,
             settings.DEVELOPER,
             settings.SECTOR,
@@ -257,7 +258,7 @@ class BotRunnerMaestro:
             settings.RECURRENCE,
             time,
             items_processed,
-        ]
+        )
 
         query = settings.SQL_QUERY_PATH
 
@@ -266,32 +267,10 @@ class BotRunnerMaestro:
         sql_connector.disconnect()
 
     def _execute_bot_task(self) -> Optional[int]:
-        """
-        Executes the main bot task by running the Main class script.
+        credentials = {"example1": "credential_1", "example2": "credential_2"}
 
-        This method performs a lazy import of the Main class to avoid circular import dependencies.
-        It instantiates the Main class and executes its script() method, returning the count
-        of processed items.
-
-        Important:
-            - The lazy import (from src.main import Main) must not be moved to the module level
-            as it would cause circular import errors.
-            - This method serves as an adapter between the bot runner and the main task logic.
-
-        Returns:
-            Optional[int]:
-                The number of items processed by the task, or None if the task failed
-                or didn't process any items.
-
-        Example:
-            >>> runner = BotRunnerLocal(...)
-            >>> processed_items = runner._execute_bot_task()
-            >>> print(f"Processed {processed_items} items")
-        """
-        from src.main import Main  # Lazy import to prevent circular imports
-
-        total_items_processed = Main().script()
-        return total_items_processed
+        items_processed = main(credentials)
+        return items_processed
 
     def run(self) -> None:
         """
