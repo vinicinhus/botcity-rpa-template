@@ -1,6 +1,6 @@
 import time
 import warnings
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import GPUtil
 import psutil
@@ -88,7 +88,7 @@ class BotRunnerLocal(BotMaestroSDK):
             "thumbprint": super().get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
                 key=settings.MAESTRO_SHAREPOINT_THUMBPRINT,
-            )
+            ),
         }
 
         return credentials
@@ -263,7 +263,7 @@ class BotRunnerLocal(BotMaestroSDK):
                 logger.info(
                     f"Resource usage at end of execution: {self._get_resource_usage()}"
                 )
-                
+
                 if settings.USE_SHAREPOINT:
                     self.sharepoint.list_folders_by_number()
                     self.sharepoint.upload_files([rf"{self.logger.log_path}"])

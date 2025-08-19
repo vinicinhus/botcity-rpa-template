@@ -48,7 +48,9 @@ class SharePointApi:
             "cert_path": self.cert_path,
         }
 
-        self.ctx = ClientContext(site_url).with_client_certificate(**cert_credentials, scopes=None)
+        self.ctx = ClientContext(site_url).with_client_certificate(
+            **cert_credentials, scopes=None
+        )
 
     def list_folders_by_number(self) -> List[str]:
         try:

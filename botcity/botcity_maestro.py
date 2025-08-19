@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 import GPUtil
 import psutil
@@ -124,7 +124,7 @@ class BotRunnerMaestro:
             "thumbprint": self.maestro.get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
                 key=settings.MAESTRO_SHAREPOINT_THUMBPRINT,
-            )
+            ),
         }
 
         return credentials
@@ -327,10 +327,9 @@ class BotRunnerMaestro:
                 logger.info(f"Execution time: {execution_time}")
                 logger.info(f"Resource usage at end of execution: {resource_usage}")
 
-
                 if settings.USE_SHAREPOINT:
                     self.sharepoint.upload_files([rf"{self.logger.log_path}"])
-                
+
                 if not settings.USE_DATABASE:
                     logger.info("Database logging is disabled.")
                 elif items_processed is None or items_processed <= 0:
