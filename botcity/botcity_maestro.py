@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 import GPUtil
 import psutil
@@ -55,16 +55,19 @@ class BotRunnerMaestro:
         self.bot_maestro_sdk_raise: bool = bot_maestro_sdk_raise
         self.maestro, self.execution = self._setup_maestro()
 
-        # Sharepoint credentials
-        self.sharepoint_credentials = self._get_credentials_sharepoint()
+        if settings.USE_SHAREPOINT:
+            # Sharepoint credentials
+            self.sharepoint_credentials = self._get_credentials_sharepoint()
 
-        self.sharepoint = SharePointApi(
-            self.sharepoint_credentials.get("site_url", "")
-            + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
-            self.sharepoint_credentials.get("username", ""),
-            self.sharepoint_credentials.get("password", ""),
-            settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
-        )
+            self.sharepoint = SharePointApi(
+                self.sharepoint_credentials.get("site_url", "")
+                + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
+                self.sharepoint_credentials.get("tenant", ""),
+                self.sharepoint_credentials.get("client_id", ""),
+                self.sharepoint_credentials.get("thumbprint", ""),
+                settings.CERTIFICATE_FILE_PATH,
+                settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
+            )
 
         # time config
         self.start_time: Optional[float] = None
@@ -95,7 +98,7 @@ class BotRunnerMaestro:
             logger.error(f"Failed to initialize BotMaestroSDK: {e}")
             raise e
 
-    def _get_credentials_sharepoint(self) -> dict:
+    def _get_credentials_sharepoint(self) -> Dict[str, str]:
         """
         Retrieves the SharePoint credentials from BotMaestro.
 
@@ -110,14 +113,18 @@ class BotRunnerMaestro:
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
                 key=settings.MAESTRO_SHAREPOINT_SITE_URL,
             ),
-            "username": self.maestro.get_credential(
+            "tenant": self.maestro.get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
-                key=settings.MAESTRO_SHAREPOINT_USERNAME,
+                key=settings.MAESTRO_SHAREPOINT_TENANT,
             ),
-            "password": self.maestro.get_credential(
+            "client_id": self.maestro.get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
-                key=settings.MAESTRO_SHAREPOINT_PASSWORD,
+                key=settings.MAESTRO_SHAREPOINT_CLIENT_ID,
             ),
+            "thumbprint": self.maestro.get_credential(
+                label=settings.MAESTRO_SHAREPOINT_LABEL,
+                key=settings.MAESTRO_SHAREPOINT_THUMBPRINT,
+            )
         }
 
         return credentials
@@ -320,8 +327,10 @@ class BotRunnerMaestro:
                 logger.info(f"Execution time: {execution_time}")
                 logger.info(f"Resource usage at end of execution: {resource_usage}")
 
-                self.sharepoint.list_folders_by_number()
-                self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+
+                if settings.USE_SHAREPOINT:
+                    self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                
                 if not settings.USE_DATABASE:
                     logger.info("Database logging is disabled.")
                 elif items_processed is None or items_processed <= 0:
@@ -360,8 +369,8 @@ class BotRunnerMaestro:
                     logger.error(
                         f"Max retries reached ({settings.MAX_RETRIES}). Giving up."
                     )
-                    self.sharepoint.list_folders_by_number()
-                    self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                    if settings.USE_SHAREPOINT:
+                        self.sharepoint.upload_files([rf"{self.logger.log_path}"])
                     raise e
 
                 else:

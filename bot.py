@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from botcity.botcity_local import BotRunnerLocal
 from botcity.botcity_maestro import BotRunnerMaestro
@@ -29,6 +30,9 @@ def get_bot_runner(args):
     """
     Factory method to create the appropriate bot runner based on arguments.
     """
+    if not os.path.isfile(settings.CERTIFICATE_FILE_PATH):
+        raise FileNotFoundError(f"Certificate file not found at: {settings.CERTIFICATE_FILE_PATH}")
+    
     if args.environment == settings.CHOICE_MAESTRO:
         return BotRunnerMaestro()
     else:

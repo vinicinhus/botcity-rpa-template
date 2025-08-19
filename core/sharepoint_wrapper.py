@@ -10,49 +10,47 @@ from core.config import settings
 
 class SharePointApi:
     """
-    A wrapper class to interact with SharePoint Online for managing folders and uploading files.
-
-    Provides methods to list folders, list files within folders, and upload files
-    to a SharePoint site using authenticated user credentials.
-
-    Attributes:
-        ctx (ClientContext): Authenticated SharePoint client context.
-        site_url (str): URL of the SharePoint site.
-        username (str): SharePoint account username.
-        password (str): SharePoint account password.
-        folder_log (str): Prefix used to filter target folders.
+    A wrapper class to interact with SharePoint Online for managing folders and uploading files,
+    now using app certificate authentication.
     """
 
     def __init__(
-        self, site_url: str, username: str, password: str, folder_log: str
+        self,
+        site_url: str,
+        tenant: str,
+        client_id: str,
+        thumbprint: str,
+        cert_path: str,
+        folder_log: str,
     ) -> None:
         """
-        Initializes the SharePoint API client and authenticates with the SharePoint site.
+        Initializes the SharePoint API client using app certificate authentication.
 
         Args:
             site_url (str): URL of the SharePoint site.
-            username (str): Username of the SharePoint account.
-            password (str): Password of the SharePoint account.
-            folder_log (str): Prefix used to identify specific folders for logging or uploading.
+            tenant (str): Azure AD tenant (ex: "minhaempresa.onmicrosoft.com" ou tenant ID).
+            client_id (str): Application (client) ID registered in Azure AD.
+            thumbprint (str): Certificate thumbprint.
+            cert_path (str): Path to the certificate PEM file.
+            folder_log (str): Prefix to identify specific folders.
         """
         self.site_url = site_url
-        self.username = username
-        self.password = password
+        self.tenant = tenant
+        self.client_id = client_id
+        self.thumbprint = thumbprint
+        self.cert_path = cert_path
         self.folder_log = folder_log
-        self.ctx = ClientContext(site_url).with_credentials(
-            credentials=UserCredential(username, password)
-        )
 
-    def list_folders_by_number(self) -> List:
-        """
-        Lists folders that start with the value defined in `folder_log`.
+        cert_credentials = {
+            "tenant": self.tenant,
+            "client_id": self.client_id,
+            "thumbprint": self.thumbprint,
+            "cert_path": self.cert_path,
+        }
 
-        Returns:
-            list: A list containing the matching folder name(s), or an empty list if none are found.
+        self.ctx = ClientContext(site_url).with_client_certificate(**cert_credentials, scopes=None)
 
-        Raises:
-            Exception: If any error occurs during the operation.
-        """
+    def list_folders_by_number(self) -> List[str]:
         try:
             folder = self.ctx.web.get_folder_by_server_relative_url(
                 settings.SHAREPOINT_ROOT_LOG_FOLDER
@@ -79,15 +77,6 @@ class SharePointApi:
             raise
 
     def _list_files_in_folder(self, folder_name: str) -> List[str]:
-        """
-        Retrieves all folders from the root log folder that start with the configured prefix.
-
-        Returns:
-            List[str]: List of folder names matching the prefix, or an empty list if none found.
-
-        Raises:
-            Exception: If an error occurs while accessing SharePoint or loading folders.
-        """
         try:
             folder_path = f"{settings.SHAREPOINT_ROOT_LOG_FOLDER}/{folder_name[0]}"
             folder = self.ctx.web.get_folder_by_server_relative_url(folder_path)
@@ -102,18 +91,6 @@ class SharePointApi:
             raise
 
     def upload_files(self, file_paths: List[str]) -> None:
-        """
-        Retrieves all file names from a specified subfolder in SharePoint.
-
-        Args:
-            folder_name (str): Name of the folder to list files from (e.g., '10 - Logs').
-
-        Returns:
-            List[str]: List of file names within the specified folder.
-
-        Raises:
-            Exception: If an error occurs while accessing the folder or loading files.
-        """
         try:
             matching_folders = self.list_folders_by_number()
             if not matching_folders:
@@ -138,7 +115,6 @@ class SharePointApi:
                     f"Subfolder '{settings.BOT_NAME}' already exists inside '{main_folder_name}'."
                 )
             else:
-                subfolder_url = f"{main_folder_path}/{settings.BOT_NAME}"
                 main_folder.folders.add(settings.BOT_NAME)
                 self.ctx.execute_query()
                 logger.info(

@@ -164,3 +164,4 @@ cython_debug/
 # Project ignore files
 **/logs/*.log
 *.zip
+*.pem

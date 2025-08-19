@@ -1,6 +1,6 @@
 import time
 import warnings
-from typing import Optional
+from typing import Optional, Dict
 
 import GPUtil
 import psutil
@@ -41,16 +41,19 @@ class BotRunnerLocal(BotMaestroSDK):
         # initial config
         self.logger: LoggerConfig = LoggerConfig(log_dir)
 
-        # Sharepoint credentials
-        self.sharepoint_credentials = self._get_credentials_sharepoint()
+        if settings.USE_SHAREPOINT:
+            # Sharepoint credentials
+            self.sharepoint_credentials = self._get_credentials_sharepoint()
 
-        self.sharepoint = SharePointApi(
-            self.sharepoint_credentials.get("site_url", "")
-            + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
-            self.sharepoint_credentials.get("username", ""),
-            self.sharepoint_credentials.get("password", ""),
-            settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
-        )
+            self.sharepoint = SharePointApi(
+                self.sharepoint_credentials.get("site_url", "")
+                + settings.MAESTRO_SHAREPOINT_SITE_URL_SUFFIX,
+                self.sharepoint_credentials.get("tenant", ""),
+                self.sharepoint_credentials.get("client_id", ""),
+                self.sharepoint_credentials.get("thumbprint", ""),
+                settings.CERTIFICATE_FILE_PATH,
+                settings.SHAREPOINT_DEPARTMENT_LOG_FOLDER,
+            )
 
         # maestro config
         self.RAISE_NOT_CONNECTED: bool = False
@@ -59,7 +62,7 @@ class BotRunnerLocal(BotMaestroSDK):
         # time config
         self.start_time: Optional[float] = None
 
-    def _get_credentials_sharepoint(self) -> dict:
+    def _get_credentials_sharepoint(self) -> Dict[str, str]:
         """
         Retrieves the SharePoint credentials from BotMaestro.
 
@@ -74,14 +77,18 @@ class BotRunnerLocal(BotMaestroSDK):
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
                 key=settings.MAESTRO_SHAREPOINT_SITE_URL,
             ),
-            "username": super().get_credential(
+            "tenant": super().get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
-                key=settings.MAESTRO_SHAREPOINT_USERNAME,
+                key=settings.MAESTRO_SHAREPOINT_TENANT,
             ),
-            "password": super().get_credential(
+            "client_id": super().get_credential(
                 label=settings.MAESTRO_SHAREPOINT_LABEL,
-                key=settings.MAESTRO_SHAREPOINT_PASSWORD,
+                key=settings.MAESTRO_SHAREPOINT_CLIENT_ID,
             ),
+            "thumbprint": super().get_credential(
+                label=settings.MAESTRO_SHAREPOINT_LABEL,
+                key=settings.MAESTRO_SHAREPOINT_THUMBPRINT,
+            )
         }
 
         return credentials
@@ -178,7 +185,7 @@ class BotRunnerLocal(BotMaestroSDK):
         sql_connector = SQLDatabaseConnectorDict(
             server=credentials.get("server", ""),
             database=credentials.get("database", ""),
-            use_windows_auth=True,
+            use_windows_auth=False,
             username=credentials.get("username"),
             password=credentials.get("password"),
         )
@@ -256,8 +263,10 @@ class BotRunnerLocal(BotMaestroSDK):
                 logger.info(
                     f"Resource usage at end of execution: {self._get_resource_usage()}"
                 )
-                self.sharepoint.list_folders_by_number()
-                self.sharepoint.upload_files([rf"{self.logger.log_path}"])
+                
+                if settings.USE_SHAREPOINT:
+                    self.sharepoint.list_folders_by_number()
+                    self.sharepoint.upload_files([rf"{self.logger.log_path}"])
                 if not settings.USE_DATABASE:
                     logger.info("Database logging is disabled.")
                 elif items_processed is None or items_processed <= 0:
@@ -278,6 +287,8 @@ class BotRunnerLocal(BotMaestroSDK):
                     logger.error(
                         f"Max retries reached ({settings.MAX_RETRIES}). Giving up."
                     )
+                    if settings.USE_SHAREPOINT:
+                        self.sharepoint.upload_files([rf"{self.logger.log_path}"])
                     raise e
 
                 else:

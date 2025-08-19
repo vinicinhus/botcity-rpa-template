@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     MAX_RETRIES: int = 0
 
     # =============================
-    # Bot Local Settings
+    # Bot Local settings
     # =============================
     SERVER_MAESTRO: Optional[str] = None
     LOGIN_MAESTRO: Optional[str] = None
@@ -52,10 +52,13 @@ class Settings(BaseSettings):
     # =============================
     # Sharepoint settings
     # =============================
+    USE_SHAREPOINT: bool = True
     MAESTRO_SHAREPOINT_LABEL: str = "Your Maestro Sharepoint Label Credential"
     MAESTRO_SHAREPOINT_SITE_URL: str = "Your Maestro Sharepoint Site URL Credential"
-    MAESTRO_SHAREPOINT_USERNAME: str = "Your Maestro Sharepoint Username Credential"
-    MAESTRO_SHAREPOINT_PASSWORD: str = "Your Maestro Sharepoint Password Credential"
+    MAESTRO_SHAREPOINT_TENANT: str = "Your Maestro Sharepoint Tenant Credential"
+    MAESTRO_SHAREPOINT_CLIENT_ID: str = "Your Maestro Sharepoint Client ID Credential"
+    MAESTRO_SHAREPOINT_THUMBPRINT: str = "Your Maestro Sharepoint Thumbprint Credential"
+    CERTIFICATE_FILE_PATH: str = r"cert\cert.pem"
 
     MAESTRO_SHAREPOINT_SITE_URL_SUFFIX: str = "TIeDesenvolvimento"
     SHAREPOINT_ROOT_LOG_FOLDER: str = r"Documentos Compartilhados/Automações/Logs"
