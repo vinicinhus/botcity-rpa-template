@@ -2,8 +2,8 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from botcity.domain.enums.department import DepartmentFolderNumber, DepartmentName
-from botcity.domain.enums.recurrence import Recurrence
+from botcity.enums.department import DepartmentFolderNumber, DepartmentName
+from botcity.enums.recurrence import Recurrence
 
 
 class Settings(BaseSettings):
