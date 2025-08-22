@@ -152,10 +152,12 @@ class BotRunnerLocal(BotMaestroSDK):
         """
         credentials_database = {
             "server": super().get_credential(
-                label=settings.MAESTRO_SQL_LABEL, key=settings.MAESTRO_SQL_SERVER
+                label=settings.MAESTRO_SQL_LABEL_HOMOL,
+                key=settings.MAESTRO_SQL_SERVER_HOMOL,
             ),
             "database": super().get_credential(
-                label=settings.MAESTRO_SQL_LABEL, key=settings.MAESTRO_SQL_DATABASE
+                label=settings.MAESTRO_SQL_LABEL_HOMOL,
+                key=settings.MAESTRO_SQL_DATABASE_HOMOL,
             ),
         }
 

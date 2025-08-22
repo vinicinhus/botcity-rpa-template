@@ -1,6 +1,5 @@
 from typing import Optional
 
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from botcity.enums.department import DepartmentFolderNumber, DepartmentName
@@ -20,16 +19,16 @@ class Settings(BaseSettings):
     # =============================
     # Bot settings
     # =============================
-    BOT_NAME: str = Field("Bot name", description="Bot name")
-    RECURRENCE: Recurrence = Field(
-        Recurrence.DIARIA, description="Automation recurrence"
-    )
-    DEVELOPER: str = Field("Developer name", description="Developer name")
-    STAKEHOLDER: str = Field("Business stakeholder", description="Business stakeholder")
-    SECTOR: DepartmentName = Field(
-        DepartmentName.ADM_GRUPOS, description="Responsible department"
-    )
-    MAX_RETRIES: int = Field(0, description="Maximum retries")
+    BOT_NAME: str = "Bot Name"
+    RECURRENCE: str = (
+        Recurrence.DIARIA
+    )  # Change this to whatever recurrence the automation is being builded for
+    DEVELOPER: str = "Developer Name"
+    STAKEHOLDER: str = "Stakeholder"
+    SECTOR: str = (
+        DepartmentName.ADM_GRUPOS
+    )  # Change this to whatever department the automation is being builded for
+    MAX_RETRIES: int = 0
 
     # =============================
     # Maestro settings
@@ -52,7 +51,7 @@ class Settings(BaseSettings):
     # Database production settings
     # =============================
     USE_DATABASE: bool = True
-    SQL_QUERY_PATH: str = r"botcity\sql\query\log_insert.sql"
+    SQL_QUERY_PATH: str = r"botcity\query\insert_log.sql"
     MAESTRO_SQL_LABEL: str = "Your Maestro SQL Label Credential"
     MAESTRO_SQL_SERVER: str = "Your Maestro SQL Server Credential"
     MAESTRO_SQL_DATABASE: str = "Your Maestro SQL Database Credential"
@@ -60,7 +59,7 @@ class Settings(BaseSettings):
     MAESTRO_SQL_PASSWORD: str = "Your Maestro SQL Password Credential"
 
     # =============================
-    # Database approval settings
+    # Database homologation settings
     # =============================
     MAESTRO_SQL_LABEL_HOMOL: str = "Your Maestro SQL Label Homol Credential"
     MAESTRO_SQL_SERVER_HOMOL: str = "Your Maestro SQL Server Homol Credential"
@@ -79,9 +78,9 @@ class Settings(BaseSettings):
 
     MAESTRO_SHAREPOINT_SITE_URL_SUFFIX: str = "TIeDesenvolvimento"
     SHAREPOINT_ROOT_LOG_FOLDER: str = r"Documentos Compartilhados/Automações/Logs"
-    SHAREPOINT_DEPARTMENT_LOG_FOLDER: DepartmentFolderNumber = Field(
-        DepartmentFolderNumber.ADM_GRUPOS, description="Department-specific log folder"
-    )
+    SHAREPOINT_DEPARTMENT_LOG_FOLDER: str = (
+        DepartmentFolderNumber.COBRANCA
+    )  # Change this to whatever department the automation is being builded for
 
     # =============================
     # Pydantic Settings
