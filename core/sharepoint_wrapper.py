@@ -3,7 +3,7 @@ import re
 from typing import List
 
 from loguru import logger
-from office365.sharepoint.client_context import ClientContext, UserCredential
+from office365.sharepoint.client_context import ClientContext
 
 from core.config import settings
 
