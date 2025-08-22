@@ -5,14 +5,14 @@ import GPUtil
 import psutil
 from loguru import logger
 
+from botcity.core.config import settings
+from botcity.core.logger import LoggerConfig
 from botcity.maestro import (
     AutomationTaskFinishStatus,
     BotExecution,
     BotMaestroSDK,
     ServerMessage,
 )
-from botcity.core.config import settings
-from botcity.core.logger import LoggerConfig
 from botcity.services.sharepoint import SharePointApi
 from botcity.services.sql_connector import SQLDatabaseConnectorDict
 from src.main import main

@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,10 +21,14 @@ class Settings(BaseSettings):
     # Bot settings
     # =============================
     BOT_NAME: str = Field("Bot name", description="Bot name")
-    RECURRENCE: Recurrence = Field(Recurrence.DIARIA, description="Automation recurrence")
+    RECURRENCE: Recurrence = Field(
+        Recurrence.DIARIA, description="Automation recurrence"
+    )
     DEVELOPER: str = Field("Developer name", description="Developer name")
     STAKEHOLDER: str = Field("Business stakeholder", description="Business stakeholder")
-    SECTOR: DepartmentName = Field(DepartmentName.ADM_GRUPOS, description="Responsible department")
+    SECTOR: DepartmentName = Field(
+        DepartmentName.ADM_GRUPOS, description="Responsible department"
+    )
     MAX_RETRIES: int = Field(0, description="Maximum retries")
 
     # =============================
@@ -37,7 +42,9 @@ class Settings(BaseSettings):
     # CLI settings
     # =============================
     DESCRIPTION: str = "Bot Runner Settings"
-    HELP_MESSAGE: str = "Define the execution environment: 'maestro' or 'local' (default: 'maestro')"
+    HELP_MESSAGE: str = (
+        "Define the execution environment: 'maestro' or 'local' (default: 'maestro')"
+    )
     CHOICE_MAESTRO: str = "maestro"
     CHOICE_LOCAL: str = "local"
 
@@ -73,17 +80,14 @@ class Settings(BaseSettings):
     MAESTRO_SHAREPOINT_SITE_URL_SUFFIX: str = "TIeDesenvolvimento"
     SHAREPOINT_ROOT_LOG_FOLDER: str = r"Documentos Compartilhados/Automações/Logs"
     SHAREPOINT_DEPARTMENT_LOG_FOLDER: DepartmentFolderNumber = Field(
-        DepartmentFolderNumber.ADM_GRUPOS,
-        description="Department-specific log folder"
+        DepartmentFolderNumber.ADM_GRUPOS, description="Department-specific log folder"
     )
 
     # =============================
     # Pydantic Settings
     # =============================
     model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=False,
-        env_file_encoding="utf-8"
+        env_file=".env", case_sensitive=False, env_file_encoding="utf-8"
     )
 
 
