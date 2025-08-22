@@ -3,7 +3,7 @@ import os
 
 from botcity.botcity_local import BotRunnerLocal
 from botcity.botcity_maestro import BotRunnerMaestro
-from core.config import settings
+from botcity.core.config import settings
 
 
 def parse_args() -> argparse.Namespace:

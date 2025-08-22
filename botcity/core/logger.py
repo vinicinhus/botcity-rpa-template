@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from core.config import settings
+from botcity.core.config import settings
 
 
 class LoggerConfig:

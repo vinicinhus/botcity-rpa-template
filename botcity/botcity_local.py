@@ -7,11 +7,11 @@ import psutil
 from loguru import logger
 from urllib3.exceptions import InsecureRequestWarning
 
+from botcity.core.config import settings
+from botcity.core.logger import LoggerConfig
 from botcity.maestro import BotMaestroSDK
-from core.config import settings
-from core.logging import LoggerConfig
-from core.sharepoint_wrapper import SharePointApi
-from core.sql_database_connector import SQLDatabaseConnectorDict
+from botcity.services.sharepoint import SharePointApi
+from botcity.services.sql_connector import SQLDatabaseConnectorDict
 from src.main import main
 
 
@@ -157,12 +157,6 @@ class BotRunnerLocal(BotMaestroSDK):
             "database": super().get_credential(
                 label=settings.MAESTRO_SQL_LABEL, key=settings.MAESTRO_SQL_DATABASE
             ),
-            "username": super().get_credential(
-                label=settings.MAESTRO_SQL_LABEL, key=settings.MAESTRO_SQL_USERNAME
-            ),
-            "password": super().get_credential(
-                label=settings.MAESTRO_SQL_LABEL, key=settings.MAESTRO_SQL_PASSWORD
-            ),
         }
 
         return credentials_database
@@ -185,7 +179,7 @@ class BotRunnerLocal(BotMaestroSDK):
         sql_connector = SQLDatabaseConnectorDict(
             server=credentials.get("server", ""),
             database=credentials.get("database", ""),
-            use_windows_auth=False,
+            use_windows_auth=True,
             username=credentials.get("username"),
             password=credentials.get("password"),
         )

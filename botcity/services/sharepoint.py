@@ -5,7 +5,7 @@ from typing import List
 from loguru import logger
 from office365.sharepoint.client_context import ClientContext
 
-from core.config import settings
+from botcity.core.config import settings
 
 
 class SharePointApi:
