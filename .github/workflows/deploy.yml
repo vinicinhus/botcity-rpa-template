@@ -1,32 +1,55 @@
-name: Deploy Bot
+name: Deploy Bot (Release)
 
-on: 
-  push:
-    branches: [main]
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: botcity-${{ github.event.repository.name }}
+  cancel-in-progress: false
 
 jobs:
   BotCity:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Dar permissão ao build
-        run: chmod +x build.sh
-      
-      - name: Build do bot
-        run: ./build.sh
-      
+
+      - name: Restaurar certificado SharePoint
+        run: | # Adicionar conteudo do certificado .pem no GitHub Secrets
+          echo "${{ secrets.SHAREPOINT_CERT_PEM }}" > botcity_aux/cert/cert.pem
+
+      - name: Build do bot (gera o zip)
+        run: bash ./build.sh
+
+      - name: Normalizar versão a partir da tag do Release
+        id: ver
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          # Se você usar tags tipo "v2.0.1", remove o "v"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+          echo "Maestro version: $VERSION"
+
+      - name: Verificar zip gerado
+        run: |
+          ls -la
+          test -f "./${{ github.event.repository.name }}.zip"
+          ls -lh "./${{ github.event.repository.name }}.zip"
+
       - name: Deploy no Maestro
-        uses: botcity-dev/botcity-action-bots@latest
+        uses: botcity-dev/botcity-action-bots@v1.0.6
         with:
-          update: true
-          deploy: false
-          release: true                              # ← Marca como ativa
-          version: '1.0.${{ github.run_number }}'   # ← Versão automática
-          botId: 'SEU_BOT_AQUI'                     # ← MUDE AQUI
-          technology: 'python'
-          botPath: './dist/bot.zip'                 # ← Ajuste se necessário
+          repositoryLabel: "" # Buscar no Maestro da BotCity
+          deploy: true
+          update: false
+          release: true
+          version: "${{ steps.ver.outputs.version }}"
+          botId: "" # Buscar no Maestro da BotCity
+          technology: "python"
+          botPath: "./${{ github.event.repository.name }}.zip"
         env:
-          LOGIN: ${{ secrets.LOGIN }}
-          SERVER: ${{ secrets.SERVER }}
-          KEY: ${{ secrets.KEY }}
+          LOGIN: ${{ secrets.LOGIN }} # Adicionar LOGIN no GitHub Secrets
+          SERVER: ${{ secrets.SERVER }} # Adicionar SERVER no GitHub Secrets
+          KEY: ${{ secrets.KEY }} # Adicionar KEY no GitHub Secrets
